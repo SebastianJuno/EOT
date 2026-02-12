@@ -12,12 +12,18 @@ required_paths = {
     ROOT / "frontend": "Missing frontend folder. Confirm repo checkout is complete.",
     ROOT / "java-parser": "Missing java-parser folder. Confirm repo checkout is complete.",
     plist_path: "Missing desktop/Info.plist. Confirm desktop packaging assets exist.",
+    ROOT / "VERSION": "Missing VERSION file. Confirm release metadata exists.",
 }
 for path, hint in required_paths.items():
     if not path.exists():
         raise SystemExit(f"Missing required path: {path}\nHint: {hint}")
 
 info_plist = plistlib.loads(plist_path.read_bytes())
+version = (ROOT / "VERSION").read_text(encoding="utf-8").strip().lstrip("v")
+if version.count(".") != 2:
+    raise SystemExit(f"Invalid VERSION value: {version!r}. Expected semantic version (e.g. 0.1.0).")
+info_plist["CFBundleShortVersionString"] = version
+info_plist["CFBundleVersion"] = version
 
 hiddenimports = []
 hiddenimports += collect_submodules("uvicorn")

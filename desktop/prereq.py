@@ -8,11 +8,14 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from backend.versioning import read_version
+
 APP_SUPPORT_DIR = Path.home() / "Library" / "Application Support" / "EOTDiff"
 CONFIG_PATH = APP_SUPPORT_DIR / "config.json"
 LOG_DIR = Path.home() / "Library" / "Logs" / "EOTDiff"
 LOG_PATH = LOG_DIR / "launcher.log"
 BACKEND_LOG_PATH = LOG_DIR / "backend.log"
+APP_VERSION = read_version()
 
 
 @dataclass
@@ -35,7 +38,7 @@ def _write_config(java_ok: bool) -> None:
     payload = {
         "prereq_checked_at": datetime.now(timezone.utc).isoformat(),
         "java_ok": java_ok,
-        "last_version_seen": "0.6.0",
+        "last_version_seen": APP_VERSION,
     }
     CONFIG_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 

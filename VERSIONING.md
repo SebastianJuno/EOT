@@ -13,6 +13,12 @@ Rules:
 - `MINOR` (`0.2.0`): new features, backwards-compatible behavior.
 - `MAJOR` (`1.0.0`): breaking changes or major product milestone.
 
+## Single source of truth
+
+- Repo release version is stored in `/VERSION`.
+- Use plain semantic version without prefix (example: `0.1.0`).
+- Backend API version and desktop bundle version are derived from `/VERSION`.
+
 ## Branch strategy
 
 - `main`: stable code suitable for internal release builds.
@@ -41,7 +47,13 @@ Examples:
 - move items from `Unreleased` into new version section.
 - add release date.
 
-2. Verify app behavior:
+2. Set release version in `/VERSION`:
+
+```bash
+echo "X.Y.Z" > VERSION
+```
+
+3. Verify app behavior:
 
 ```bash
 cd /Users/sebastian.bujnowski/Documents/New\ project\ 2
@@ -51,27 +63,27 @@ make test
 make package-macos
 ```
 
-3. Commit release changes:
+4. Commit release changes:
 
 ```bash
 git add .
 git commit -m "release: vX.Y.Z"
 ```
 
-4. Tag release:
+5. Tag release:
 
 ```bash
 git tag -a vX.Y.Z -m "Release vX.Y.Z"
 ```
 
-5. Push branch and tags:
+6. Push branch and tags:
 
 ```bash
 git push origin HEAD
 git push origin --tags
 ```
 
-6. Publish/share artifact:
+7. Publish/share artifact:
 
 - `dist/EOT-Diff-Tool-mac-universal.zip`
 

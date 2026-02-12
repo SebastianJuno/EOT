@@ -30,6 +30,7 @@ from .schemas import (
     PreviewAnalyzeRequest,
     PreviewMatchEditRequest,
 )
+from .versioning import read_version
 from .xml_import import parse_tasks_from_project_xml_bytes
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,7 +54,7 @@ DEFAULT_CSV_COLUMN_MAP = {
     "baseline_finish": "Baseline Finish",
 }
 
-app = FastAPI(title="EOT Programme Diff Tool", version="0.5.0")
+app = FastAPI(title="EOT Programme Diff Tool", version=read_version())
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
