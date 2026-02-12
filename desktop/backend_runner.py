@@ -4,6 +4,7 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -17,13 +18,22 @@ from .prereq import BACKEND_LOG_PATH, log_event
 
 @dataclass
 class BackendHandle:
-    process: subprocess.Popen
+    process: subprocess.Popen | None
     base_url: str
     port: int
     session_id: str
     pid: int
     backend_log_path: Path
     launch_cmd: list[str]
+    inprocess: InProcessBackend | None = None
+
+
+@dataclass
+class InProcessBackend:
+    thread: threading.Thread
+    server: Any | None = None
+    exit_code: int | None = None
+    error: str = ""
 
 
 @dataclass
@@ -71,21 +81,43 @@ def _classify_exit_reason(log_tail: str) -> str:
     return "exited_early"
 
 
+def _handle_exit_code(handle: BackendHandle) -> int | None:
+    if handle.inprocess is not None:
+        if handle.inprocess.exit_code is not None:
+            return handle.inprocess.exit_code
+        if not handle.inprocess.thread.is_alive():
+            # If the thread ended without setting an exit code, treat it as failed.
+            return 1
+        return None
+    if handle.process is None:
+        return None
+    return handle.process.poll()
+
+
+def _handle_failure_details(handle: BackendHandle, max_bytes: int = 1200) -> str:
+    if handle.inprocess is not None:
+        if handle.inprocess.error:
+            return handle.inprocess.error[-max_bytes:]
+        return ""
+    log_tail = _tail_backend_log(handle.backend_log_path)
+    return log_tail[-max_bytes:]
+
+
 def wait_for_health(handle: BackendHandle, timeout_seconds: float = 30.0) -> HealthCheckResult:
     health = f"{handle.base_url}/health"
     start = time.monotonic()
     deadline = start + timeout_seconds
     last_error = ""
     while time.monotonic() < deadline:
-        exit_code = handle.process.poll()
+        exit_code = _handle_exit_code(handle)
         if exit_code is not None:
-            log_tail = _tail_backend_log(handle.backend_log_path)
-            reason = _classify_exit_reason(log_tail)
+            details = _handle_failure_details(handle)
+            reason = _classify_exit_reason(details)
             return HealthCheckResult(
                 ok=False,
                 reason=reason,
                 exit_code=exit_code,
-                details=log_tail[-1200:],
+                details=details,
                 elapsed_seconds=time.monotonic() - start,
             )
 
@@ -103,15 +135,15 @@ def wait_for_health(handle: BackendHandle, timeout_seconds: float = 30.0) -> Hea
             last_error = str(exc)
             time.sleep(0.3)
 
-    exit_code = handle.process.poll()
+    exit_code = _handle_exit_code(handle)
     if exit_code is not None:
-        log_tail = _tail_backend_log(handle.backend_log_path)
-        reason = _classify_exit_reason(log_tail)
+        details = _handle_failure_details(handle)
+        reason = _classify_exit_reason(details)
         return HealthCheckResult(
             ok=False,
             reason=reason,
             exit_code=exit_code,
-            details=log_tail[-1200:],
+            details=details,
             elapsed_seconds=time.monotonic() - start,
         )
 
@@ -124,27 +156,33 @@ def wait_for_health(handle: BackendHandle, timeout_seconds: float = 30.0) -> Hea
     )
 
 
-def _runtime_env() -> dict[str, str]:
-    env = os.environ.copy()
-
+def _apply_runtime_env(target_env: dict[str, str]) -> dict[str, str]:
     parser_jar = resource_path("java-parser", "target", "mpp-extractor-1.0.0-jar-with-dependencies.jar")
     frontend_dir = resource_path("frontend")
 
-    env["EOT_PARSER_JAR"] = str(parser_jar)
-    env["EOT_FRONTEND_DIR"] = str(frontend_dir)
+    target_env["EOT_PARSER_JAR"] = str(parser_jar)
+    target_env["EOT_FRONTEND_DIR"] = str(frontend_dir)
 
     # Prefer Homebrew OpenJDK locations if available.
     extra_java_paths = [
         "/opt/homebrew/opt/openjdk@17/bin",
         "/usr/local/opt/openjdk@17/bin",
     ]
-    path = env.get("PATH", "")
+    path = target_env.get("PATH", "")
     for java_path in extra_java_paths:
         if Path(java_path).exists() and java_path not in path:
             path = f"{java_path}:{path}" if path else java_path
-    env["PATH"] = path
+    target_env["PATH"] = path
 
-    return env
+    return target_env
+
+
+def _runtime_env() -> dict[str, str]:
+    return _apply_runtime_env(os.environ.copy())
+
+
+def _runtime_env_inprocess() -> None:
+    _apply_runtime_env(os.environ)
 
 
 def _backend_command(port: int, session_id: str) -> list[str]:
@@ -162,10 +200,7 @@ def _backend_command(port: int, session_id: str) -> list[str]:
     return [sys.executable, "-m", "desktop.main", *base_args]
 
 
-def start_backend() -> BackendHandle:
-    port = _find_free_port()
-    base_url = f"http://127.0.0.1:{port}"
-    session_id = f"{int(time.time() * 1000)}-{port}"
+def _start_backend_subprocess(port: int, base_url: str, session_id: str) -> BackendHandle:
     cmd = _backend_command(port=port, session_id=session_id)
     log_file = _open_backend_log_file()
     process = subprocess.Popen(cmd, stdout=log_file, stderr=log_file, env=_runtime_env())
@@ -182,13 +217,109 @@ def start_backend() -> BackendHandle:
     )
     log_event(
         f"backend_start session_id={handle.session_id} pid={handle.pid} "
-        f"port={handle.port} cmd={' '.join(handle.launch_cmd)}"
+        f"port={handle.port} cmd={' '.join(handle.launch_cmd)} mode=subprocess"
     )
     return handle
 
 
+def _start_backend_inprocess(port: int, base_url: str, session_id: str) -> BackendHandle:
+    _runtime_env_inprocess()
+    state: InProcessBackend | None = None
+
+    def run_backend() -> None:
+        nonlocal state
+        try:
+            import uvicorn
+            from backend.app import app as fastapi_app
+
+            if state is None:  # pragma: no cover - defensive
+                return
+            config = uvicorn.Config(
+                fastapi_app,
+                host="127.0.0.1",
+                port=port,
+                log_level="info",
+                loop="asyncio",
+            )
+            server = uvicorn.Server(config)
+            state.server = server
+            log_event(f"backend_inprocess_thread_start session_id={session_id} port={port}")
+            server.run()
+            if state.exit_code is None:
+                state.exit_code = 0
+            log_event(f"backend_inprocess_thread_exit session_id={session_id} exit_code=0")
+        except BaseException as exc:  # pragma: no cover - defensive
+            exit_code = 1
+            if isinstance(exc, SystemExit) and isinstance(exc.code, int):
+                exit_code = exc.code
+            if state is not None:
+                state.error = repr(exc)
+                state.exit_code = exit_code
+            log_event(
+                f"backend_inprocess_thread_exception session_id={session_id} "
+                f"exit_code={exit_code} error={exc!r}"
+            )
+
+    thread = threading.Thread(target=run_backend, name=f"eot-backend-{port}", daemon=True)
+    state = InProcessBackend(thread=thread)
+    thread.start()
+
+    handle = BackendHandle(
+        process=None,
+        base_url=base_url,
+        port=port,
+        session_id=session_id,
+        pid=os.getpid(),
+        backend_log_path=BACKEND_LOG_PATH,
+        launch_cmd=["<inprocess>"],
+        inprocess=state,
+    )
+    log_event(
+        f"backend_start session_id={handle.session_id} pid={handle.pid} "
+        f"port={handle.port} cmd=<inprocess> mode=inprocess"
+    )
+    return handle
+
+
+def start_backend() -> BackendHandle:
+    port = _find_free_port()
+    base_url = f"http://127.0.0.1:{port}"
+    session_id = f"{int(time.time() * 1000)}-{port}"
+    if getattr(sys, "frozen", False):
+        # In packaged mode, avoid launching the .app executable as a child process:
+        # on newer macOS versions this can crash at process registration (TransformProcessType).
+        return _start_backend_inprocess(port=port, base_url=base_url, session_id=session_id)
+    return _start_backend_subprocess(port=port, base_url=base_url, session_id=session_id)
+
+
 def stop_backend(handle: BackendHandle | None) -> None:
     if handle is None:
+        return
+    if handle.inprocess is not None:
+        state = handle.inprocess
+        if state.exit_code is not None and not state.thread.is_alive():
+            log_event(
+                f"backend_stop_skipped_already_exited session_id={handle.session_id} "
+                f"pid={handle.pid} exit_code={state.exit_code}"
+            )
+            return
+
+        log_event(f"backend_stop_signal session_id={handle.session_id} pid={handle.pid} mode=inprocess")
+        if state.server is not None:
+            state.server.should_exit = True
+        state.thread.join(timeout=5)
+        if state.thread.is_alive():
+            log_event(f"backend_stop_timeout session_id={handle.session_id} pid={handle.pid}")
+            return
+        if state.exit_code is None:
+            state.exit_code = 0
+        log_event(
+            f"backend_stopped session_id={handle.session_id} pid={handle.pid} "
+            f"exit_code={state.exit_code} mode=inprocess"
+        )
+        return
+
+    if handle.process is None:
         return
     if handle.process.poll() is not None:
         log_event(
@@ -202,7 +333,7 @@ def stop_backend(handle: BackendHandle | None) -> None:
         handle.process.wait(timeout=5)
         log_event(
             f"backend_stopped session_id={handle.session_id} pid={handle.pid} "
-            f"exit_code={handle.process.returncode}"
+            f"exit_code={handle.process.returncode} mode=subprocess"
         )
     except subprocess.TimeoutExpired:
         log_event(f"backend_stop_kill session_id={handle.session_id} pid={handle.pid}")
@@ -210,5 +341,5 @@ def stop_backend(handle: BackendHandle | None) -> None:
         handle.process.wait(timeout=3)
         log_event(
             f"backend_killed session_id={handle.session_id} pid={handle.pid} "
-            f"exit_code={handle.process.returncode}"
+            f"exit_code={handle.process.returncode} mode=subprocess"
         )
