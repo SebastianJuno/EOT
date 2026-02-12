@@ -72,3 +72,4 @@ Output:
 - Attribution API: `/api/attribution/apply`
 - Exports: `/api/export/csv`, `/api/export/pdf`
 - SCL-aligned attribution and fault allocation outputs remain unchanged.
+# EOT
