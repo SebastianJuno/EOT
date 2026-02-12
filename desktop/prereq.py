@@ -12,6 +12,7 @@ APP_SUPPORT_DIR = Path.home() / "Library" / "Application Support" / "EOTDiff"
 CONFIG_PATH = APP_SUPPORT_DIR / "config.json"
 LOG_DIR = Path.home() / "Library" / "Logs" / "EOTDiff"
 LOG_PATH = LOG_DIR / "launcher.log"
+BACKEND_LOG_PATH = LOG_DIR / "backend.log"
 
 
 @dataclass
@@ -22,7 +23,7 @@ class PrereqResult:
     message: str
 
 
-def _log(message: str) -> None:
+def log_event(message: str) -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     line = f"{datetime.now(timezone.utc).isoformat()} {message}\n"
     with LOG_PATH.open("a", encoding="utf-8") as fh:
@@ -75,7 +76,7 @@ def check_prerequisites() -> PrereqResult:
 
     java_ok, java_version, msg = _java_check()
     _write_config(java_ok)
-    _log(f"check_prerequisites java_ok={java_ok} java_version={java_version} msg={msg}")
+    log_event(f"check_prerequisites java_ok={java_ok} java_version={java_version} msg={msg}")
 
     return PrereqResult(
         ok=java_ok,
@@ -101,7 +102,7 @@ def install_prerequisites() -> PrereqResult:
         text=True,
         check=False,
     )
-    _log(
+    log_event(
         "install_prerequisites "
         f"code={install.returncode} stdout={install.stdout.strip()} stderr={install.stderr.strip()}"
     )

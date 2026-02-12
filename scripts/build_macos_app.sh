@@ -23,8 +23,8 @@ make build-parser
 
 rm -rf build dist
 
-# Requires a universal2 Python environment for true universal output.
-pyinstaller --noconfirm --clean --target-arch universal2 desktop/pyinstaller.spec
+# Build from spec. PyInstaller does not allow --target-arch with a .spec file.
+pyinstaller --noconfirm --clean desktop/pyinstaller.spec
 
 APP_PATH="dist/EOT Diff Tool.app"
 if [[ ! -d "$APP_PATH" ]]; then
@@ -32,10 +32,21 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
-ZIP_PATH="dist/EOT-Diff-Tool-mac-universal.zip"
-rm -f "$ZIP_PATH"
+ARCH="$(uname -m)"
+if [[ "$ARCH" == "arm64" ]]; then
+  ZIP_PATH="dist/EOT-Diff-Tool-mac-arm64.zip"
+elif [[ "$ARCH" == "x86_64" ]]; then
+  ZIP_PATH="dist/EOT-Diff-Tool-mac-x64.zip"
+else
+  ZIP_PATH="dist/EOT-Diff-Tool-mac-${ARCH}.zip"
+fi
+
+rm -f "$ZIP_PATH" "dist/EOT-Diff-Tool-mac-universal.zip"
 # Preserve app metadata/resource forks for mac app distribution.
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
+
+# Keep legacy name for compatibility with existing docs/workflows.
+cp "$ZIP_PATH" "dist/EOT-Diff-Tool-mac-universal.zip"
 
 echo "Build complete: $ZIP_PATH"
 echo "Distribution note: this is unsigned (internal testing)."

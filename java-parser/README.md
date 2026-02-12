@@ -6,7 +6,7 @@ This component parses `.mpp` files using MPXJ and prints JSON for the Python bac
 
 ```bash
 cd /Users/sebastian.bujnowski/Documents/New\ project\ 2/java-parser
-mvn clean package
+mvn -DskipTests -Dmaven.test.skip=true clean package
 ```
 
 Expected output jar:

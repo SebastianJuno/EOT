@@ -3,8 +3,20 @@ from pathlib import Path
 import plistlib
 from PyInstaller.utils.hooks import collect_submodules
 
-ROOT = Path.cwd()
-plist_path = ROOT / "desktop" / "Info.plist"
+SPEC_DIR = Path(SPECPATH).resolve()
+ROOT = SPEC_DIR.parent
+plist_path = SPEC_DIR / "Info.plist"
+
+required_paths = {
+    ROOT / "backend": "Missing backend folder. Confirm repo checkout is complete.",
+    ROOT / "frontend": "Missing frontend folder. Confirm repo checkout is complete.",
+    ROOT / "java-parser": "Missing java-parser folder. Confirm repo checkout is complete.",
+    plist_path: "Missing desktop/Info.plist. Confirm desktop packaging assets exist.",
+}
+for path, hint in required_paths.items():
+    if not path.exists():
+        raise SystemExit(f"Missing required path: {path}\nHint: {hint}")
+
 info_plist = plistlib.loads(plist_path.read_bytes())
 
 hiddenimports = []
@@ -20,13 +32,13 @@ if not jar_path.exists():
     )
 
 a = Analysis(
-    ["desktop/main.py"],
+    [str(SPEC_DIR / "main.py")],
     pathex=[str(ROOT)],
     binaries=[],
     datas=[
-        ("backend", "backend"),
-        ("frontend", "frontend"),
-        ("java-parser", "java-parser"),
+        (str(ROOT / "backend"), "backend"),
+        (str(ROOT / "frontend"), "frontend"),
+        (str(ROOT / "java-parser"), "java-parser"),
     ],
     hiddenimports=hiddenimports,
     hookspath=[],

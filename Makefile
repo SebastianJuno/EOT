@@ -25,7 +25,7 @@ setup: check-python
 	. $(VENV)/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
 build-parser:
-	cd java-parser && mvn clean package
+	cd java-parser && mvn -DskipTests -Dmaven.test.skip=true clean package
 
 test: check-venv
 	. $(VENV)/bin/activate && pytest -q

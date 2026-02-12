@@ -7,8 +7,11 @@ import net.sf.mpxj.Task;
 import net.sf.mpxj.reader.UniversalProjectReader;
 
 import java.io.File;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,19 +39,20 @@ public class MppExtractor {
                 row.put("name", task.getName());
                 row.put("wbs", task.getWBS());
                 row.put("outline_level", task.getOutlineLevel());
-                row.put("is_summary", task.getSummary() != null && task.getSummary());
-                row.put("start", task.getStart() == null ? null : task.getStart().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString());
-                row.put("finish", task.getFinish() == null ? null : task.getFinish().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString());
-                row.put("baseline_start", task.getBaselineStart() == null ? null : task.getBaselineStart().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString());
-                row.put("baseline_finish", task.getBaselineFinish() == null ? null : task.getBaselineFinish().toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString());
+                row.put("is_summary", task.getSummary());
+                row.put("start", toDateString(task.getStart()));
+                row.put("finish", toDateString(task.getFinish()));
+                row.put("baseline_start", toDateString(task.getBaselineStart()));
+                row.put("baseline_finish", toDateString(task.getBaselineFinish()));
 
-                if (task.getDuration() != null && task.getDuration().getDuration() != null) {
+                if (task.getDuration() != null) {
                     row.put("duration_minutes", (int) Math.round(task.getDuration().convertUnits(net.sf.mpxj.TimeUnit.MINUTES, project.getProjectProperties()).getDuration()));
                 } else {
                     row.put("duration_minutes", null);
                 }
 
-                row.put("percent_complete", task.getPercentageComplete() == null ? null : task.getPercentageComplete().doubleValue());
+                Number percentComplete = task.getPercentageComplete();
+                row.put("percent_complete", percentComplete == null ? null : percentComplete.doubleValue());
 
                 List<Integer> predecessorUids = new ArrayList<>();
                 task.getPredecessors().forEach(rel -> {
@@ -68,5 +72,22 @@ public class MppExtractor {
             System.err.println(ex.getMessage());
             System.exit(1);
         }
+    }
+
+    private static String toDateString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof ChronoLocalDateTime<?> dateTime) {
+            return dateTime.toLocalDate().toString();
+        }
+        if (value instanceof LocalDateTime localDateTime) {
+            return localDateTime.toLocalDate().toString();
+        }
+        if (value instanceof Date date) {
+            return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().toString();
+        }
+        String text = value.toString();
+        return text.length() >= 10 ? text.substring(0, 10) : text;
     }
 }

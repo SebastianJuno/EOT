@@ -9,14 +9,30 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from .paths import resource_path
+from .prereq import BACKEND_LOG_PATH, log_event
 
 
 @dataclass
 class BackendHandle:
     process: subprocess.Popen
     base_url: str
+    port: int
+    session_id: str
+    pid: int
+    backend_log_path: Path
+    launch_cmd: list[str]
+
+
+@dataclass
+class HealthCheckResult:
+    ok: bool
+    reason: str
+    exit_code: int | None
+    details: str
+    elapsed_seconds: float
 
 
 def _find_free_port(start: int = 18000, end: int = 20000) -> int:
@@ -31,17 +47,81 @@ def _find_free_port(start: int = 18000, end: int = 20000) -> int:
     raise RuntimeError("No free local port found for backend")
 
 
-def wait_for_health(base_url: str, timeout_seconds: float = 30.0) -> bool:
-    health = f"{base_url}/health"
-    deadline = time.time() + timeout_seconds
-    while time.time() < deadline:
+def _open_backend_log_file() -> Any:
+    BACKEND_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    return BACKEND_LOG_PATH.open("ab")
+
+
+def _tail_backend_log(path: Path, max_bytes: int = 8192) -> str:
+    if not path.exists():
+        return ""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return ""
+    return data[-max_bytes:].decode("utf-8", errors="replace")
+
+
+def _classify_exit_reason(log_tail: str) -> str:
+    lowered = log_tail.lower()
+    if "address already in use" in lowered:
+        return "port_bind_issue"
+    if "modulenotfounderror" in lowered or "no module named" in lowered:
+        return "missing_dependency"
+    return "exited_early"
+
+
+def wait_for_health(handle: BackendHandle, timeout_seconds: float = 30.0) -> HealthCheckResult:
+    health = f"{handle.base_url}/health"
+    start = time.monotonic()
+    deadline = start + timeout_seconds
+    last_error = ""
+    while time.monotonic() < deadline:
+        exit_code = handle.process.poll()
+        if exit_code is not None:
+            log_tail = _tail_backend_log(handle.backend_log_path)
+            reason = _classify_exit_reason(log_tail)
+            return HealthCheckResult(
+                ok=False,
+                reason=reason,
+                exit_code=exit_code,
+                details=log_tail[-1200:],
+                elapsed_seconds=time.monotonic() - start,
+            )
+
         try:
             with urllib.request.urlopen(health, timeout=1.5) as response:
                 if response.status == 200:
-                    return True
-        except (urllib.error.URLError, TimeoutError):
+                    return HealthCheckResult(
+                        ok=True,
+                        reason="healthy",
+                        exit_code=None,
+                        details="",
+                        elapsed_seconds=time.monotonic() - start,
+                    )
+        except (urllib.error.URLError, TimeoutError) as exc:
+            last_error = str(exc)
             time.sleep(0.3)
-    return False
+
+    exit_code = handle.process.poll()
+    if exit_code is not None:
+        log_tail = _tail_backend_log(handle.backend_log_path)
+        reason = _classify_exit_reason(log_tail)
+        return HealthCheckResult(
+            ok=False,
+            reason=reason,
+            exit_code=exit_code,
+            details=log_tail[-1200:],
+            elapsed_seconds=time.monotonic() - start,
+        )
+
+    return HealthCheckResult(
+        ok=False,
+        reason="timeout",
+        exit_code=None,
+        details=last_error,
+        elapsed_seconds=time.monotonic() - start,
+    )
 
 
 def _runtime_env() -> dict[str, str]:
@@ -67,39 +147,68 @@ def _runtime_env() -> dict[str, str]:
     return env
 
 
-def start_backend() -> BackendHandle:
-    port = _find_free_port()
-    base_url = f"http://127.0.0.1:{port}"
-
-    cmd = [
-        sys.executable,
-        "-m",
-        "uvicorn",
-        "backend.app:app",
+def _backend_command(port: int, session_id: str) -> list[str]:
+    base_args = [
+        "--backend-mode",
         "--host",
         "127.0.0.1",
         "--port",
         str(port),
+        "--session-id",
+        session_id,
     ]
+    if getattr(sys, "frozen", False):
+        return [sys.executable, *base_args]
+    return [sys.executable, "-m", "desktop.main", *base_args]
 
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        env=_runtime_env(),
+
+def start_backend() -> BackendHandle:
+    port = _find_free_port()
+    base_url = f"http://127.0.0.1:{port}"
+    session_id = f"{int(time.time() * 1000)}-{port}"
+    cmd = _backend_command(port=port, session_id=session_id)
+    log_file = _open_backend_log_file()
+    process = subprocess.Popen(cmd, stdout=log_file, stderr=log_file, env=_runtime_env())
+    log_file.close()
+
+    handle = BackendHandle(
+        process=process,
+        base_url=base_url,
+        port=port,
+        session_id=session_id,
+        pid=process.pid,
+        backend_log_path=BACKEND_LOG_PATH,
+        launch_cmd=cmd,
     )
-
-    return BackendHandle(process=process, base_url=base_url)
+    log_event(
+        f"backend_start session_id={handle.session_id} pid={handle.pid} "
+        f"port={handle.port} cmd={' '.join(handle.launch_cmd)}"
+    )
+    return handle
 
 
 def stop_backend(handle: BackendHandle | None) -> None:
     if handle is None:
         return
     if handle.process.poll() is not None:
+        log_event(
+            f"backend_stop_skipped_already_exited session_id={handle.session_id} "
+            f"pid={handle.pid} exit_code={handle.process.returncode}"
+        )
         return
+    log_event(f"backend_stop_terminate session_id={handle.session_id} pid={handle.pid}")
     handle.process.terminate()
     try:
         handle.process.wait(timeout=5)
+        log_event(
+            f"backend_stopped session_id={handle.session_id} pid={handle.pid} "
+            f"exit_code={handle.process.returncode}"
+        )
     except subprocess.TimeoutExpired:
+        log_event(f"backend_stop_kill session_id={handle.session_id} pid={handle.pid}")
         handle.process.kill()
         handle.process.wait(timeout=3)
+        log_event(
+            f"backend_killed session_id={handle.session_id} pid={handle.pid} "
+            f"exit_code={handle.process.returncode}"
+        )
