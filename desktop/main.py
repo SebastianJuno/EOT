@@ -1,30 +1,53 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import sys
-import tkinter as tk
-from tkinter import messagebox
 
 from desktop.backend_runner import start_backend, stop_backend, wait_for_health
 from desktop.prereq import check_prerequisites, install_prerequisites
 from desktop.window import launch_window
 
+JAVA17_URL = "https://adoptium.net/temurin/releases/?version=17"
+
 
 def _show_error(title: str, message: str) -> None:
-    root = tk.Tk()
-    root.withdraw()
-    messagebox.showerror(title, message)
-    root.destroy()
+    script = (
+        f"display dialog {json.dumps(message)} "
+        f'with title {json.dumps(title)} buttons {{"OK"}} default button "OK"'
+    )
+    subprocess.run(["osascript", "-e", script], check=False)
 
 
 def _ask_install(message: str) -> bool:
-    root = tk.Tk()
-    root.withdraw()
-    answer = messagebox.askyesno(
-        "Install Prerequisites",
-        f"{message}\n\nInstall missing prerequisites now?",
+    prompt = message + "\n\nInstall missing prerequisites now?"
+    script = (
+        f"display dialog {json.dumps(prompt)} "
+        'with title "Install Prerequisites" '
+        'buttons {"Cancel", "Install"} default button "Install"'
     )
-    root.destroy()
-    return bool(answer)
+    result = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, check=False)
+    return result.returncode == 0 and "button returned:Install" in (result.stdout or "")
+
+
+def _show_install_failed_help(extra_message: str) -> None:
+    prompt = (
+        "Automatic install did not complete.\n\n"
+        "Manual fix:\n"
+        "1) Install Temurin/OpenJDK 17\n"
+        "2) Verify with: java -version\n"
+        "3) Relaunch the app\n\n"
+        f"Details: {extra_message}\n\n"
+        "Open Java 17 download page now?"
+    )
+    script = (
+        f"display dialog {json.dumps(prompt)} "
+        'with title "Install Failed" '
+        'buttons {"Cancel", "Open Download Page"} default button "Open Download Page"'
+    )
+    result = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, check=False)
+    if result.returncode == 0 and "button returned:Open Download Page" in (result.stdout or ""):
+        subprocess.run(["open", JAVA17_URL], check=False)
 
 
 def main() -> int:
@@ -39,11 +62,7 @@ def main() -> int:
 
         post_install = install_prerequisites()
         if not post_install.ok:
-            _show_error(
-                "Install Failed",
-                "Automatic install did not complete successfully.\n"
-                "Please install OpenJDK 17 manually and relaunch the app.",
-            )
+            _show_install_failed_help(post_install.message)
             return 1
 
     handle = None

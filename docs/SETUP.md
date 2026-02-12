@@ -57,14 +57,16 @@ Colleague steps:
 On launch, app will:
 1. Check Java 17 runtime.
 2. If missing, prompt to install prerequisites.
-3. Start backend locally.
-4. Open UI in a native window.
-5. Stop backend automatically when app closes.
+3. If auto-install fails, show manual fix instructions and offer one-click Java 17 download page.
+4. Start backend locally.
+5. Open UI in a native window.
+6. Stop backend automatically when app closes.
 
 ## Troubleshooting
 
 - App opens but compare fails on `.mpp`:
   - Java may be missing. Relaunch app and allow install prompt.
+  - If auto-install fails, use the in-app "Open Download Page" button and install Java 17 manually.
 - Packaging fails on PyInstaller arch:
   - Ensure Python build env supports universal2 target.
 - Need logs:
