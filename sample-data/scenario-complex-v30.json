@@ -1,0 +1,1266 @@
+{
+  "scenario_id": "complex-construction-v30",
+  "title": "Complex construction programme with deterministic 30-row revisions",
+  "matrix_expectations": {
+    "rows_per_version": 30,
+    "summary_rows_per_version": 6,
+    "leaf_rows_per_version": 24,
+    "shared_descriptions": 27,
+    "added_descriptions": 3,
+    "removed_descriptions": 3,
+    "shared_unchanged": 18,
+    "shared_changed": 9
+  },
+  "versions": {
+    "v1": {
+      "name": "Programme V1",
+      "title": "Complex Construction Programme V1",
+      "tasks": [
+        {
+          "uid": 1001,
+          "key": "project_root",
+          "name": "Project Delivery Programme",
+          "parent_key": null,
+          "summary": true,
+          "outline_level": 1,
+          "wbs": "1",
+          "start": "2026-01-05",
+          "finish": "2026-07-03",
+          "baseline_start": "2026-01-05",
+          "baseline_finish": "2026-07-03",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 1002,
+          "key": "sum_enabling",
+          "name": "Enabling Works",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.1",
+          "start": "2026-01-05",
+          "finish": "2026-01-30",
+          "baseline_start": "2026-01-05",
+          "baseline_finish": "2026-01-30",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 1003,
+          "key": "site_mobilisation",
+          "name": "Site Mobilisation",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.1",
+          "start": "2026-01-05",
+          "finish": "2026-01-09",
+          "baseline_start": "2026-01-05",
+          "baseline_finish": "2026-01-09",
+          "percent_complete": 100,
+          "start_activity": true,
+          "predecessors": []
+        },
+        {
+          "uid": 1004,
+          "key": "temporary_utilities_setup",
+          "name": "Temporary Utilities Setup",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.2",
+          "start": "2026-01-06",
+          "finish": "2026-01-15",
+          "baseline_start": "2026-01-06",
+          "baseline_finish": "2026-01-15",
+          "percent_complete": 90,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "site_mobilisation",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1005,
+          "key": "site_hoarding_installation",
+          "name": "Site Hoarding Installation",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.3",
+          "start": "2026-01-12",
+          "finish": "2026-01-20",
+          "baseline_start": "2026-01-12",
+          "baseline_finish": "2026-01-20",
+          "percent_complete": 100,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "site_mobilisation",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1006,
+          "key": "topographical_survey",
+          "name": "Topographical Survey",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.4",
+          "start": "2026-01-13",
+          "finish": "2026-01-16",
+          "baseline_start": "2026-01-13",
+          "baseline_finish": "2026-01-16",
+          "percent_complete": 100,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "temporary_utilities_setup",
+              "type": "FF"
+            }
+          ]
+        },
+        {
+          "uid": 1007,
+          "key": "sum_substructure",
+          "name": "Substructure",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.2",
+          "start": "2026-01-19",
+          "finish": "2026-03-20",
+          "baseline_start": "2026-01-19",
+          "baseline_finish": "2026-03-20",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 1008,
+          "key": "bulk_excavation",
+          "name": "Bulk Excavation",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.1",
+          "start": "2026-01-21",
+          "finish": "2026-02-02",
+          "baseline_start": "2026-01-21",
+          "baseline_finish": "2026-02-02",
+          "percent_complete": 70,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "site_hoarding_installation",
+              "type": "FS"
+            },
+            {
+              "key": "topographical_survey",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1009,
+          "key": "pile_cap_construction",
+          "name": "Pile Cap Construction",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.2",
+          "start": "2026-02-03",
+          "finish": "2026-02-11",
+          "baseline_start": "2026-02-03",
+          "baseline_finish": "2026-02-11",
+          "percent_complete": 60,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "bulk_excavation",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1010,
+          "key": "ground_beam_pour",
+          "name": "Ground Beam Pour",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.3",
+          "start": "2026-02-12",
+          "finish": "2026-02-19",
+          "baseline_start": "2026-02-12",
+          "baseline_finish": "2026-02-19",
+          "percent_complete": 45,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "pile_cap_construction",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1011,
+          "key": "basement_slab_pour",
+          "name": "Basement Slab Pour",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.4",
+          "start": "2026-02-20",
+          "finish": "2026-03-02",
+          "baseline_start": "2026-02-20",
+          "baseline_finish": "2026-03-02",
+          "percent_complete": 30,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_beam_pour",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1012,
+          "key": "sum_superstructure",
+          "name": "Superstructure",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.3",
+          "start": "2026-03-02",
+          "finish": "2026-04-24",
+          "baseline_start": "2026-03-02",
+          "baseline_finish": "2026-04-24",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 1013,
+          "key": "ground_floor_frame_erection",
+          "name": "Ground Floor Frame Erection",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.1",
+          "start": "2026-03-03",
+          "finish": "2026-03-13",
+          "baseline_start": "2026-03-03",
+          "baseline_finish": "2026-03-13",
+          "percent_complete": 35,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "basement_slab_pour",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1014,
+          "key": "level_1_frame_erection",
+          "name": "Level 1 Frame Erection",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.2",
+          "start": "2026-03-16",
+          "finish": "2026-03-26",
+          "baseline_start": "2026-03-16",
+          "baseline_finish": "2026-03-26",
+          "percent_complete": 20,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1015,
+          "key": "stair_core_construction",
+          "name": "Stair Core Construction",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.3",
+          "start": "2026-03-10",
+          "finish": "2026-03-23",
+          "baseline_start": "2026-03-10",
+          "baseline_finish": "2026-03-23",
+          "percent_complete": 25,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1016,
+          "key": "roof_steel_installation",
+          "name": "Roof Steel Installation",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.4",
+          "start": "2026-03-30",
+          "finish": "2026-04-10",
+          "baseline_start": "2026-03-30",
+          "baseline_finish": "2026-04-10",
+          "percent_complete": 10,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1017,
+          "key": "sum_services",
+          "name": "Services and Fit-Out",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.4",
+          "start": "2026-03-09",
+          "finish": "2026-05-22",
+          "baseline_start": "2026-03-09",
+          "baseline_finish": "2026-05-22",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 1018,
+          "key": "mechanical_first_fix",
+          "name": "Mechanical First Fix",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.1",
+          "start": "2026-03-12",
+          "finish": "2026-04-01",
+          "baseline_start": "2026-03-12",
+          "baseline_finish": "2026-04-01",
+          "percent_complete": 30,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1019,
+          "key": "electrical_first_fix",
+          "name": "Electrical First Fix",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.2",
+          "start": "2026-03-12",
+          "finish": "2026-04-03",
+          "baseline_start": "2026-03-12",
+          "baseline_finish": "2026-04-03",
+          "percent_complete": 28,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1020,
+          "key": "fire_protection_first_fix",
+          "name": "Fire Protection First Fix",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.3",
+          "start": "2026-03-20",
+          "finish": "2026-04-08",
+          "baseline_start": "2026-03-20",
+          "baseline_finish": "2026-04-08",
+          "percent_complete": 15,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "level_1_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1021,
+          "key": "internal_partitioning",
+          "name": "Internal Partitioning",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.4",
+          "start": "2026-04-06",
+          "finish": "2026-04-17",
+          "baseline_start": "2026-04-06",
+          "baseline_finish": "2026-04-17",
+          "percent_complete": 5,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "mechanical_first_fix",
+              "type": "FS"
+            },
+            {
+              "key": "electrical_first_fix",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1022,
+          "key": "drywall_and_plaster",
+          "name": "Drywall and Plaster",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.5",
+          "start": "2026-04-20",
+          "finish": "2026-05-01",
+          "baseline_start": "2026-04-20",
+          "baseline_finish": "2026-05-01",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "internal_partitioning",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1023,
+          "key": "ceiling_and_finishes",
+          "name": "Ceiling and Finishes",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.6",
+          "start": "2026-05-04",
+          "finish": "2026-05-14",
+          "baseline_start": "2026-05-04",
+          "baseline_finish": "2026-05-14",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "drywall_and_plaster",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1024,
+          "key": "sum_external",
+          "name": "External Works and Handover",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.5",
+          "start": "2026-03-03",
+          "finish": "2026-07-03",
+          "baseline_start": "2026-03-03",
+          "baseline_finish": "2026-07-03",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 1025,
+          "key": "facade_installation",
+          "name": "Facade Installation",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.1",
+          "start": "2026-04-01",
+          "finish": "2026-04-24",
+          "baseline_start": "2026-04-01",
+          "baseline_finish": "2026-04-24",
+          "percent_complete": 5,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "roof_steel_installation",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1026,
+          "key": "external_drainage",
+          "name": "External Drainage",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.2",
+          "start": "2026-03-03",
+          "finish": "2026-03-20",
+          "baseline_start": "2026-03-03",
+          "baseline_finish": "2026-03-20",
+          "percent_complete": 55,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "basement_slab_pour",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 1027,
+          "key": "landscaping_works",
+          "name": "Landscaping Works",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.3",
+          "start": "2026-04-13",
+          "finish": "2026-05-08",
+          "baseline_start": "2026-04-13",
+          "baseline_finish": "2026-05-08",
+          "percent_complete": 20,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "external_drainage",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1028,
+          "key": "lift_installation",
+          "name": "Lift Installation",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.4",
+          "start": "2026-04-13",
+          "finish": "2026-05-06",
+          "baseline_start": "2026-04-13",
+          "baseline_finish": "2026-05-06",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "roof_steel_installation",
+              "type": "FS"
+            },
+            {
+              "key": "electrical_first_fix",
+              "type": "SF"
+            }
+          ]
+        },
+        {
+          "uid": 1029,
+          "key": "commissioning_and_testing",
+          "name": "Commissioning and Testing",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.5",
+          "start": "2026-05-15",
+          "finish": "2026-06-05",
+          "baseline_start": "2026-05-15",
+          "baseline_finish": "2026-06-05",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "lift_installation",
+              "type": "FS"
+            },
+            {
+              "key": "fire_protection_first_fix",
+              "type": "FF"
+            },
+            {
+              "key": "ceiling_and_finishes",
+              "type": "FS"
+            },
+            {
+              "key": "facade_installation",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 1030,
+          "key": "client_handover_documentation",
+          "name": "Client Handover Documentation",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.6",
+          "start": "2026-06-08",
+          "finish": "2026-06-12",
+          "baseline_start": "2026-06-08",
+          "baseline_finish": "2026-06-12",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "commissioning_and_testing",
+              "type": "FS"
+            }
+          ]
+        }
+      ]
+    },
+    "v2": {
+      "name": "Programme V2",
+      "title": "Complex Construction Programme V2",
+      "tasks": [
+        {
+          "uid": 5001,
+          "key": "project_root",
+          "name": "Project Delivery Programme",
+          "parent_key": null,
+          "summary": true,
+          "outline_level": 1,
+          "wbs": "1",
+          "start": "2026-01-05",
+          "finish": "2026-07-03",
+          "baseline_start": "2026-01-05",
+          "baseline_finish": "2026-07-03",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 5002,
+          "key": "sum_enabling",
+          "name": "Enabling Works",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.1",
+          "start": "2026-01-05",
+          "finish": "2026-01-30",
+          "baseline_start": "2026-01-05",
+          "baseline_finish": "2026-01-30",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 5003,
+          "key": "site_mobilisation",
+          "name": "Site Mobilisation",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.1",
+          "start": "2026-01-05",
+          "finish": "2026-01-09",
+          "baseline_start": "2026-01-05",
+          "baseline_finish": "2026-01-09",
+          "percent_complete": 100,
+          "start_activity": true,
+          "predecessors": []
+        },
+        {
+          "uid": 5004,
+          "key": "temporary_utilities_setup",
+          "name": "Temporary Utilities Setup",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.2",
+          "start": "2026-01-06",
+          "finish": "2026-01-19",
+          "baseline_start": "2026-01-06",
+          "baseline_finish": "2026-01-15",
+          "percent_complete": 75,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "site_mobilisation",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5005,
+          "key": "site_hoarding_installation",
+          "name": "Site Hoarding Installation",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.3",
+          "start": "2026-01-12",
+          "finish": "2026-01-20",
+          "baseline_start": "2026-01-12",
+          "baseline_finish": "2026-01-20",
+          "percent_complete": 100,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "site_mobilisation",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5006,
+          "key": "utility_diversion_works",
+          "name": "Utility Diversion Works",
+          "parent_key": "sum_enabling",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.1.4",
+          "start": "2026-01-13",
+          "finish": "2026-01-22",
+          "baseline_start": "2026-01-13",
+          "baseline_finish": "2026-01-22",
+          "percent_complete": 65,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "temporary_utilities_setup",
+              "type": "FF"
+            }
+          ]
+        },
+        {
+          "uid": 5007,
+          "key": "sum_substructure",
+          "name": "Substructure",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.2",
+          "start": "2026-01-19",
+          "finish": "2026-03-20",
+          "baseline_start": "2026-01-19",
+          "baseline_finish": "2026-03-20",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 5008,
+          "key": "bulk_excavation",
+          "name": "Bulk Excavation",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.1",
+          "start": "2026-01-21",
+          "finish": "2026-02-02",
+          "baseline_start": "2026-01-21",
+          "baseline_finish": "2026-02-02",
+          "percent_complete": 55,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "site_hoarding_installation",
+              "type": "FS"
+            },
+            {
+              "key": "utility_diversion_works",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5009,
+          "key": "pile_cap_construction",
+          "name": "Pile Cap Construction",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.2",
+          "start": "2026-02-03",
+          "finish": "2026-02-11",
+          "baseline_start": "2026-02-03",
+          "baseline_finish": "2026-02-11",
+          "percent_complete": 60,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "bulk_excavation",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5010,
+          "key": "ground_beam_pour",
+          "name": "Ground Beam Pour",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.3",
+          "start": "2026-02-12",
+          "finish": "2026-02-24",
+          "baseline_start": "2026-02-12",
+          "baseline_finish": "2026-02-19",
+          "percent_complete": 35,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "pile_cap_construction",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5011,
+          "key": "basement_slab_pour",
+          "name": "Basement Slab Pour",
+          "parent_key": "sum_substructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.2.4",
+          "start": "2026-02-25",
+          "finish": "2026-03-09",
+          "baseline_start": "2026-02-20",
+          "baseline_finish": "2026-03-02",
+          "percent_complete": 18,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_beam_pour",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5012,
+          "key": "sum_superstructure",
+          "name": "Superstructure",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.3",
+          "start": "2026-03-02",
+          "finish": "2026-04-24",
+          "baseline_start": "2026-03-02",
+          "baseline_finish": "2026-04-24",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 5013,
+          "key": "ground_floor_frame_erection",
+          "name": "Ground Floor Frame Erection",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.1",
+          "start": "2026-03-03",
+          "finish": "2026-03-13",
+          "baseline_start": "2026-03-03",
+          "baseline_finish": "2026-03-13",
+          "percent_complete": 35,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "basement_slab_pour",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5014,
+          "key": "level_1_frame_erection",
+          "name": "Level 1 Frame Erection",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.2",
+          "start": "2026-03-17",
+          "finish": "2026-03-31",
+          "baseline_start": "2026-03-16",
+          "baseline_finish": "2026-03-26",
+          "percent_complete": 10,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5015,
+          "key": "prefabricated_riser_install",
+          "name": "Prefabricated Riser Install",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.3",
+          "start": "2026-03-24",
+          "finish": "2026-04-02",
+          "baseline_start": "2026-03-24",
+          "baseline_finish": "2026-04-02",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "level_1_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5016,
+          "key": "roof_steel_installation",
+          "name": "Roof Steel Installation",
+          "parent_key": "sum_superstructure",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.3.4",
+          "start": "2026-03-30",
+          "finish": "2026-04-10",
+          "baseline_start": "2026-03-30",
+          "baseline_finish": "2026-04-10",
+          "percent_complete": 10,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5017,
+          "key": "sum_services",
+          "name": "Services and Fit-Out",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.4",
+          "start": "2026-03-09",
+          "finish": "2026-05-22",
+          "baseline_start": "2026-03-09",
+          "baseline_finish": "2026-05-22",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 5018,
+          "key": "mechanical_first_fix",
+          "name": "Mechanical First Fix",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.1",
+          "start": "2026-03-12",
+          "finish": "2026-04-01",
+          "baseline_start": "2026-03-12",
+          "baseline_finish": "2026-04-01",
+          "percent_complete": 18,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5019,
+          "key": "electrical_first_fix",
+          "name": "Electrical First Fix",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.2",
+          "start": "2026-03-12",
+          "finish": "2026-04-03",
+          "baseline_start": "2026-03-12",
+          "baseline_finish": "2026-04-03",
+          "percent_complete": 28,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "ground_floor_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5020,
+          "key": "fire_protection_first_fix",
+          "name": "Fire Protection First Fix",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.3",
+          "start": "2026-03-24",
+          "finish": "2026-04-15",
+          "baseline_start": "2026-03-20",
+          "baseline_finish": "2026-04-08",
+          "percent_complete": 8,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "level_1_frame_erection",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5021,
+          "key": "internal_partitioning",
+          "name": "Internal Partitioning",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.4",
+          "start": "2026-04-06",
+          "finish": "2026-04-17",
+          "baseline_start": "2026-04-06",
+          "baseline_finish": "2026-04-17",
+          "percent_complete": 5,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "mechanical_first_fix",
+              "type": "FS"
+            },
+            {
+              "key": "electrical_first_fix",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5022,
+          "key": "drywall_and_plaster",
+          "name": "Drywall and Plaster",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.5",
+          "start": "2026-04-20",
+          "finish": "2026-05-01",
+          "baseline_start": "2026-04-20",
+          "baseline_finish": "2026-05-01",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "internal_partitioning",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5023,
+          "key": "ceiling_and_finishes",
+          "name": "Ceiling and Finishes",
+          "parent_key": "sum_services",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.4.6",
+          "start": "2026-05-04",
+          "finish": "2026-05-14",
+          "baseline_start": "2026-05-04",
+          "baseline_finish": "2026-05-14",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "drywall_and_plaster",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5024,
+          "key": "sum_external",
+          "name": "External Works and Handover",
+          "parent_key": "project_root",
+          "summary": true,
+          "outline_level": 2,
+          "wbs": "1.5",
+          "start": "2026-03-03",
+          "finish": "2026-07-03",
+          "baseline_start": "2026-03-03",
+          "baseline_finish": "2026-07-03",
+          "percent_complete": null,
+          "start_activity": false,
+          "predecessors": []
+        },
+        {
+          "uid": 5025,
+          "key": "facade_installation",
+          "name": "Facade Installation",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.1",
+          "start": "2026-04-06",
+          "finish": "2026-05-01",
+          "baseline_start": "2026-04-01",
+          "baseline_finish": "2026-04-24",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "roof_steel_installation",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5026,
+          "key": "external_drainage",
+          "name": "External Drainage",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.2",
+          "start": "2026-03-03",
+          "finish": "2026-03-20",
+          "baseline_start": "2026-03-03",
+          "baseline_finish": "2026-03-20",
+          "percent_complete": 55,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "basement_slab_pour",
+              "type": "SS"
+            }
+          ]
+        },
+        {
+          "uid": 5027,
+          "key": "landscaping_works",
+          "name": "Landscaping Works",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.3",
+          "start": "2026-04-13",
+          "finish": "2026-05-08",
+          "baseline_start": "2026-04-13",
+          "baseline_finish": "2026-05-08",
+          "percent_complete": 20,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "external_drainage",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5028,
+          "key": "lift_installation",
+          "name": "Lift Installation",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.4",
+          "start": "2026-04-13",
+          "finish": "2026-05-06",
+          "baseline_start": "2026-04-13",
+          "baseline_finish": "2026-05-06",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "roof_steel_installation",
+              "type": "FS"
+            },
+            {
+              "key": "electrical_first_fix",
+              "type": "SF"
+            }
+          ]
+        },
+        {
+          "uid": 5029,
+          "key": "commissioning_and_testing",
+          "name": "Commissioning and Testing",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.5",
+          "start": "2026-06-01",
+          "finish": "2026-06-26",
+          "baseline_start": "2026-05-15",
+          "baseline_finish": "2026-06-05",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "lift_installation",
+              "type": "FS"
+            },
+            {
+              "key": "fire_protection_first_fix",
+              "type": "FF"
+            },
+            {
+              "key": "ceiling_and_finishes",
+              "type": "FS"
+            },
+            {
+              "key": "facade_installation",
+              "type": "FS"
+            }
+          ]
+        },
+        {
+          "uid": 5030,
+          "key": "digital_om_handover",
+          "name": "Digital O&M Handover",
+          "parent_key": "sum_external",
+          "summary": false,
+          "outline_level": 3,
+          "wbs": "1.5.6",
+          "start": "2026-06-29",
+          "finish": "2026-07-03",
+          "baseline_start": "2026-06-29",
+          "baseline_finish": "2026-07-03",
+          "percent_complete": 0,
+          "start_activity": false,
+          "predecessors": [
+            {
+              "key": "commissioning_and_testing",
+              "type": "FS"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

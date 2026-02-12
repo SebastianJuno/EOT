@@ -3,7 +3,7 @@ PYTHON_MAJOR_MINOR ?= 3.12
 VENV ?= .venv
 VENV_PY ?= $(VENV)/bin/python
 
-.PHONY: setup test run run-open run-desktop-dev package-macos install-local-app open-local-app build-parser check-python check-venv clean-venv bootstrap-macos
+.PHONY: setup test run run-open run-desktop-dev package-macos install-local-app open-local-app build-parser check-python check-venv clean-venv bootstrap-macos generate-sample-data
 
 check-python:
 	@command -v $(PYTHON) >/dev/null || (echo "ERROR: $(PYTHON) not found. Install Python 3.12 first."; exit 1)
@@ -50,3 +50,6 @@ open-local-app:
 
 bootstrap-macos:
 	./scripts/bootstrap_macos.sh
+
+generate-sample-data:
+	$(PYTHON) sample-data/generate_complex_samples.py
