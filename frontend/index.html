@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EOT Programme Diff Tool</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>EOT Programme Diff Tool</h1>
+      <p class="sub">Upload two files. The app auto-detects type by extension (.mpp, .xml, .csv). Mixed types are blocked.</p>
+
+      <section class="card">
+        <h2>1) Upload Files (Auto-Detect Type)</h2>
+        <form id="compare-form">
+          <label>Programme A (.mpp/.xml/.csv)<input type="file" id="left-file" accept=".mpp,.xml,.csv,.pp" required /></label>
+          <label>Programme B (.mpp/.xml/.csv)<input type="file" id="right-file" accept=".mpp,.xml,.csv,.pp" required /></label>
+          <label class="check"><input type="checkbox" id="include-baseline" /> Include baseline variance fields</label>
+
+          <details>
+            <summary>CSV Mapping (only used when both files are .csv)</summary>
+            <h3>Column Mapping (Programme A)</h3>
+            <div class="map-grid">
+              <input id="left-col-uid" placeholder="UID column (e.g. Unique ID)" value="Unique ID" />
+              <input id="left-col-name" placeholder="Task name column" value="Task Name" />
+              <input id="left-col-start" placeholder="Start column" value="Start" />
+              <input id="left-col-finish" placeholder="Finish column" value="Finish" />
+              <input id="left-col-duration" placeholder="Duration minutes column" value="Duration (mins)" />
+              <input id="left-col-pct" placeholder="% complete column" value="% Complete" />
+              <input id="left-col-preds" placeholder="Predecessors column" value="Predecessors" />
+              <input id="left-col-summary" placeholder="Summary flag column" value="Summary" />
+              <input id="left-col-baseline-start" placeholder="Baseline start column" value="Baseline Start" />
+              <input id="left-col-baseline-finish" placeholder="Baseline finish column" value="Baseline Finish" />
+            </div>
+
+            <h3>Column Mapping (Programme B)</h3>
+            <div class="map-grid">
+              <input id="right-col-uid" placeholder="UID column (e.g. Unique ID)" value="Unique ID" />
+              <input id="right-col-name" placeholder="Task name column" value="Task Name" />
+              <input id="right-col-start" placeholder="Start column" value="Start" />
+              <input id="right-col-finish" placeholder="Finish column" value="Finish" />
+              <input id="right-col-duration" placeholder="Duration minutes column" value="Duration (mins)" />
+              <input id="right-col-pct" placeholder="% complete column" value="% Complete" />
+              <input id="right-col-preds" placeholder="Predecessors column" value="Predecessors" />
+              <input id="right-col-summary" placeholder="Summary flag column" value="Summary" />
+              <input id="right-col-baseline-start" placeholder="Baseline start column" value="Baseline Start" />
+              <input id="right-col-baseline-finish" placeholder="Baseline finish column" value="Baseline Finish" />
+            </div>
+          </details>
+
+          <button type="submit">Compare Files</button>
+        </form>
+      </section>
+
+      <section class="card" id="summary-card" hidden>
+        <h2>2) Summary</h2>
+        <div id="summary"></div>
+        <div class="actions">
+          <a class="btn" href="/api/export/csv" target="_blank">Download CSV</a>
+          <a class="btn" href="/api/export/pdf" target="_blank">Download PDF</a>
+        </div>
+      </section>
+
+      <section class="card" id="allocation-card" hidden>
+        <h2>3) Fault Allocation</h2>
+        <div id="allocation"></div>
+        <p class="disclaimer">Assessment support aligned to SCL Delay and Disruption Protocol concepts; not legal advice.</p>
+      </section>
+
+      <section class="card" id="manual-card" hidden>
+        <h2>4) Manual Match Confirmation</h2>
+        <p>Adjust a match if needed, then click <strong>Re-run Compare</strong>.</p>
+        <div class="inline">
+          <input type="number" id="manual-left" placeholder="Left UID" />
+          <input type="number" id="manual-right" placeholder="Right UID" />
+          <button id="add-override" type="button">Add Match Override</button>
+        </div>
+        <ul id="override-list"></ul>
+        <button id="rerun" type="button">Re-run Compare</button>
+      </section>
+
+      <section class="card" id="diff-card" hidden>
+        <h2>5) Task-Level Evidence Pack</h2>
+        <div class="bulk-row">
+          <label>Bulk cause
+            <select id="bulk-cause">
+              <option value="unassigned">unassigned</option>
+              <option value="client">client</option>
+              <option value="contractor">contractor</option>
+              <option value="neutral">neutral</option>
+            </select>
+          </label>
+          <label>Bulk reason
+            <select id="bulk-reason">
+              <option value="">none</option>
+              <option value="instruction_change">instruction change</option>
+              <option value="late_information">late information</option>
+              <option value="contractor_productivity">contractor productivity</option>
+              <option value="weather">weather</option>
+              <option value="third_party_statutory">third-party/statutory</option>
+              <option value="other">other</option>
+            </select>
+          </label>
+          <label class="check"><input type="checkbox" id="bulk-confirm-red" /> Confirm low-confidence rows</label>
+          <button id="apply-bulk" type="button">Apply Bulk To Selected</button>
+          <button id="apply-inline" type="button">Apply Inline Edits</button>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Pick</th>
+              <th>Status</th>
+              <th>Task</th>
+              <th>Confidence</th>
+              <th>Cause</th>
+              <th>Reason</th>
+              <th>Attr Status</th>
+              <th>Slippage Days</th>
+              <th>Evidence</th>
+            </tr>
+          </thead>
+          <tbody id="diff-body"></tbody>
+        </table>
+      </section>
+
+      <section class="card" id="error-card" hidden>
+        <h2>Error</h2>
+        <p id="error-text"></p>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

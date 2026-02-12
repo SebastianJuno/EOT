@@ -1,0 +1,187 @@
+:root {
+  --bg: #f5f3ee;
+  --card: #ffffff;
+  --ink: #1d1c1a;
+  --muted: #5e5a50;
+  --accent: #0e6ba8;
+  --good: #2b9348;
+  --warn: #d98e04;
+  --bad: #ba181b;
+  --border: #d6d0c4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at top right, #f8e8d6 0%, var(--bg) 45%);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 20px auto;
+  padding: 16px;
+}
+
+h1 {
+  margin: 0 0 6px;
+}
+
+h3 {
+  margin: 12px 0 8px;
+  font-size: 15px;
+}
+
+.sub {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.disclaimer {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+form,
+.inline {
+  display: grid;
+  gap: 10px;
+}
+
+.inline {
+  grid-template-columns: 1fr 1fr auto;
+}
+
+.mode-switch {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.bulk-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto auto;
+  gap: 8px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+input,
+button,
+select,
+.btn {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font: inherit;
+}
+
+button,
+.btn {
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  padding: 8px;
+  font-size: 13px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #fff;
+}
+
+.green {
+  background: var(--good);
+}
+
+.amber {
+  background: var(--warn);
+}
+
+.red {
+  background: var(--bad);
+}
+
+.pending {
+  background: #8b0000;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.allocation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.metric {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+@media (max-width: 920px) {
+  .inline,
+  .mode-switch,
+  .map-grid,
+  .bulk-row,
+  .allocation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+}

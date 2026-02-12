@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <Name>Programme V1</Name>
+  <Title>Simple Test Programme V1</Title>
+  <ScheduleFromStart>1</ScheduleFromStart>
+  <StartDate>2026-01-05T08:00:00</StartDate>
+  <Tasks>
+    <Task>
+      <UID>1</UID>
+      <ID>1</ID>
+      <Name>Programme V1</Name>
+      <Summary>1</Summary>
+      <OutlineLevel>1</OutlineLevel>
+      <Start>2026-01-05T08:00:00</Start>
+      <Finish>2026-01-30T17:00:00</Finish>
+      <Duration>PT200H0M0S</Duration>
+      <BaselineStart>2026-01-05T08:00:00</BaselineStart>
+      <BaselineFinish>2026-01-30T17:00:00</BaselineFinish>
+    </Task>
+
+    <Task>
+      <UID>2</UID>
+      <ID>2</ID>
+      <Name>Mobilisation</Name>
+      <Summary>0</Summary>
+      <OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-05T08:00:00</Start>
+      <Finish>2026-01-07T17:00:00</Finish>
+      <Duration>PT24H0M0S</Duration>
+      <PercentComplete>100</PercentComplete>
+      <BaselineStart>2026-01-05T08:00:00</BaselineStart>
+      <BaselineFinish>2026-01-07T17:00:00</BaselineFinish>
+    </Task>
+
+    <Task>
+      <UID>3</UID>
+      <ID>3</ID>
+      <Name>Groundworks</Name>
+      <Summary>0</Summary>
+      <OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-08T08:00:00</Start>
+      <Finish>2026-01-14T17:00:00</Finish>
+      <Duration>PT56H0M0S</Duration>
+      <PercentComplete>40</PercentComplete>
+      <BaselineStart>2026-01-08T08:00:00</BaselineStart>
+      <BaselineFinish>2026-01-13T17:00:00</BaselineFinish>
+      <PredecessorLink>
+        <PredecessorUID>2</PredecessorUID>
+        <Type>1</Type>
+      </PredecessorLink>
+    </Task>
+
+    <Task>
+      <UID>4</UID>
+      <ID>4</ID>
+      <Name>Superstructure</Name>
+      <Summary>0</Summary>
+      <OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-15T08:00:00</Start>
+      <Finish>2026-01-23T17:00:00</Finish>
+      <Duration>PT72H0M0S</Duration>
+      <PercentComplete>15</PercentComplete>
+      <BaselineStart>2026-01-15T08:00:00</BaselineStart>
+      <BaselineFinish>2026-01-22T17:00:00</BaselineFinish>
+      <PredecessorLink>
+        <PredecessorUID>3</PredecessorUID>
+        <Type>1</Type>
+      </PredecessorLink>
+    </Task>
+
+    <Task>
+      <UID>5</UID>
+      <ID>5</ID>
+      <Name>Commissioning</Name>
+      <Summary>0</Summary>
+      <OutlineLevel>2</OutlineLevel>
+      <Start>2026-01-26T08:00:00</Start>
+      <Finish>2026-01-30T17:00:00</Finish>
+      <Duration>PT40H0M0S</Duration>
+      <PercentComplete>0</PercentComplete>
+      <BaselineStart>2026-01-26T08:00:00</BaselineStart>
+      <BaselineFinish>2026-01-29T17:00:00</BaselineFinish>
+      <PredecessorLink>
+        <PredecessorUID>4</PredecessorUID>
+        <Type>1</Type>
+      </PredecessorLink>
+    </Task>
+  </Tasks>
+</Project>

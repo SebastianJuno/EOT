@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.DS_Store
+java-parser/target/
+.pycache_local/
+build/
+dist/
