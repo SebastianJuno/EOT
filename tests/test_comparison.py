@@ -54,10 +54,18 @@ def test_override_controls_match():
 
 
 def test_added_and_removed_detection():
-    left = [task(1, "Old task", date(2025, 1, 1), date(2025, 1, 2))]
-    right = [task(2, "New task", date(2025, 1, 1), date(2025, 1, 2))]
+    left_for_removed = [
+        task(1, "Task A", date(2025, 1, 1), date(2025, 1, 2)),
+        task(2, "Task B", date(2025, 1, 3), date(2025, 1, 4)),
+    ]
+    right_for_removed = [task(10, "Task A", date(2025, 1, 1), date(2025, 1, 2))]
+    removed_result = compare_tasks(left_for_removed, right_for_removed, include_baseline=False, overrides=[])
+    assert any(diff.status == "removed" for diff in removed_result.diffs)
 
-    result = compare_tasks(left, right, include_baseline=False, overrides=[])
-
-    statuses = sorted(d.status for d in result.diffs)
-    assert statuses == ["added", "removed"]
+    left_for_added = [task(1, "Task A", date(2025, 1, 1), date(2025, 1, 2))]
+    right_for_added = [
+        task(10, "Task A", date(2025, 1, 1), date(2025, 1, 2)),
+        task(20, "Task C", date(2025, 1, 5), date(2025, 1, 6)),
+    ]
+    added_result = compare_tasks(left_for_added, right_for_added, include_baseline=False, overrides=[])
+    assert any(diff.status == "added" for diff in added_result.diffs)

@@ -53,8 +53,67 @@
         </form>
       </section>
 
+      <section class="card" id="preview-card" hidden>
+        <h2>2) Visual Programme Preview (Pre-Analysis)</h2>
+        <div class="preview-controls">
+          <label class="check"><input type="checkbox" id="preview-leaf-only" checked /> Leaf only</label>
+          <label class="check"><input type="checkbox" id="preview-show-summaries" /> Show summaries</label>
+          <label class="check"><input type="checkbox" id="preview-show-baseline" /> Show baseline</label>
+          <label class="check"><input type="checkbox" id="preview-show-deps" checked /> Show dependency links</label>
+          <button id="preview-refresh" type="button">Refresh Preview</button>
+          <button id="preview-run-analysis" type="button">Run Full Analysis</button>
+        </div>
+        <p id="preview-meta" class="sub"></p>
+        <div class="preview-paging">
+          <button id="preview-prev" type="button">Previous</button>
+          <button id="preview-next" type="button">Next</button>
+          <span id="preview-page-text"></span>
+        </div>
+        <div id="preview-link-hint" class="sub">Chart-link mode: click one left bar, then one right bar to set a provisional match.</div>
+        <div id="timeline-axis-wrap" class="timeline-axis-wrap">
+          <svg id="timeline-axis" class="timeline-axis" viewBox="0 0 1600 42" preserveAspectRatio="none"></svg>
+        </div>
+        <div class="timeline-grid">
+          <div class="timeline-panel">
+            <h3>Programme A</h3>
+            <div id="timeline-left-wrap" class="timeline-wrap">
+              <svg id="timeline-left" class="timeline-svg" viewBox="0 0 1600 500" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+          <div class="timeline-panel">
+            <h3>Programme B</h3>
+            <div id="timeline-right-wrap" class="timeline-wrap">
+              <svg id="timeline-right" class="timeline-svg" viewBox="0 0 1600 500" preserveAspectRatio="none"></svg>
+            </div>
+          </div>
+        </div>
+
+        <h3>Provisional Match Editor</h3>
+        <div class="inline">
+          <label>Left task
+            <select id="preview-left-select"></select>
+          </label>
+          <label>Right task
+            <select id="preview-right-select"></select>
+          </label>
+          <button id="preview-apply-link" type="button">Set Match</button>
+          <button id="preview-remove-link" type="button">Remove Match</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Left</th>
+              <th>Right</th>
+              <th>Confidence</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody id="preview-match-body"></tbody>
+        </table>
+      </section>
+
       <section class="card" id="summary-card" hidden>
-        <h2>2) Summary</h2>
+        <h2>3) Summary</h2>
         <div id="summary"></div>
         <div class="actions">
           <a class="btn" href="/api/export/csv" target="_blank">Download CSV</a>
@@ -63,13 +122,13 @@
       </section>
 
       <section class="card" id="allocation-card" hidden>
-        <h2>3) Fault Allocation</h2>
+        <h2>4) Fault Allocation</h2>
         <div id="allocation"></div>
         <p class="disclaimer">Assessment support aligned to SCL Delay and Disruption Protocol concepts; not legal advice.</p>
       </section>
 
       <section class="card" id="manual-card" hidden>
-        <h2>4) Manual Match Confirmation</h2>
+        <h2>5) Manual Match Confirmation</h2>
         <p>Adjust a match if needed, then click <strong>Re-run Compare</strong>.</p>
         <div class="inline">
           <input type="number" id="manual-left" placeholder="Left UID" />
@@ -81,7 +140,7 @@
       </section>
 
       <section class="card" id="diff-card" hidden>
-        <h2>5) Task-Level Evidence Pack</h2>
+        <h2>6) Task-Level Evidence Pack</h2>
         <div class="bulk-row">
           <label>Bulk cause
             <select id="bulk-cause">

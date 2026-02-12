@@ -14,8 +14,22 @@ from .attribution import apply_assignments, build_assignment_map
 from .comparison import compare_tasks
 from .csv_import import parse_tasks_from_csv_bytes
 from .parser_bridge import MppParseError, parse_mpp
+from .preview import (
+    apply_preview_match_edits,
+    analyze_preview_session,
+    build_preview_init_response,
+    build_preview_rows_response,
+    create_preview_session,
+    get_preview_session,
+)
 from .reporting import build_csv, build_pdf
-from .schemas import AttributionApplyRequest, CompareResult, MatchOverride
+from .schemas import (
+    AttributionApplyRequest,
+    CompareResult,
+    MatchOverride,
+    PreviewAnalyzeRequest,
+    PreviewMatchEditRequest,
+)
 from .xml_import import parse_tasks_from_project_xml_bytes
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -83,6 +97,43 @@ def _parse_csv_map(raw: str | None, side: str) -> dict:
         raise ValueError(f"Invalid {side} CSV mapping JSON: {exc}") from exc
 
 
+async def _parse_uploaded_pair(
+    *,
+    left_file: UploadFile,
+    right_file: UploadFile,
+    left_kind: str,
+    left_column_map_json: str,
+    right_column_map_json: str,
+) -> tuple[list, list]:
+    left_bytes = await left_file.read()
+    right_bytes = await right_file.read()
+
+    if left_kind == ".mpp":
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            left_path = tmp / f"left_{left_file.filename}"
+            right_path = tmp / f"right_{right_file.filename}"
+            left_path.write_bytes(left_bytes)
+            right_path.write_bytes(right_bytes)
+            left_tasks = parse_mpp(left_path, PARSER_JAR)
+            right_tasks = parse_mpp(right_path, PARSER_JAR)
+            return left_tasks, right_tasks
+
+    if left_kind == ".xml":
+        left_tasks = parse_tasks_from_project_xml_bytes(left_bytes)
+        right_tasks = parse_tasks_from_project_xml_bytes(right_bytes)
+        return left_tasks, right_tasks
+
+    if left_kind == ".csv":
+        left_map = _parse_csv_map(left_column_map_json, "left")
+        right_map = _parse_csv_map(right_column_map_json, "right")
+        left_tasks = parse_tasks_from_csv_bytes(left_bytes, left_map)
+        right_tasks = parse_tasks_from_csv_bytes(right_bytes, right_map)
+        return left_tasks, right_tasks
+
+    raise ValueError(f"Unsupported file type: {left_kind}")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -110,25 +161,13 @@ async def compare_auto(
         return JSONResponse(status_code=400, content={"error": str(exc)})
 
     try:
-        if left_kind == ".mpp":
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                tmp = Path(tmp_dir)
-                left_path = tmp / f"left_{left_file.filename}"
-                right_path = tmp / f"right_{right_file.filename}"
-                left_path.write_bytes(await left_file.read())
-                right_path.write_bytes(await right_file.read())
-                left_tasks = parse_mpp(left_path, PARSER_JAR)
-                right_tasks = parse_mpp(right_path, PARSER_JAR)
-        elif left_kind == ".xml":
-            left_tasks = parse_tasks_from_project_xml_bytes(await left_file.read())
-            right_tasks = parse_tasks_from_project_xml_bytes(await right_file.read())
-        elif left_kind == ".csv":
-            left_map = _parse_csv_map(left_column_map_json, "left")
-            right_map = _parse_csv_map(right_column_map_json, "right")
-            left_tasks = parse_tasks_from_csv_bytes(await left_file.read(), left_map)
-            right_tasks = parse_tasks_from_csv_bytes(await right_file.read(), right_map)
-        else:
-            return JSONResponse(status_code=400, content={"error": f"Unsupported file type: {left_kind}"})
+        left_tasks, right_tasks = await _parse_uploaded_pair(
+            left_file=left_file,
+            right_file=right_file,
+            left_kind=left_kind,
+            left_column_map_json=left_column_map_json,
+            right_column_map_json=right_column_map_json,
+        )
 
         result = compare_tasks(
             left_tasks=left_tasks,
@@ -139,6 +178,95 @@ async def compare_auto(
         )
         return _set_last_result(result).model_dump()
     except (ValueError, MppParseError) as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/preview/init")
+async def preview_init(
+    left_file: UploadFile = File(...),
+    right_file: UploadFile = File(...),
+    include_baseline: bool = Form(False),
+    include_summaries: bool = Form(False),
+    offset: int = Form(0),
+    limit: int = Form(200),
+    left_column_map_json: str = Form(""),
+    right_column_map_json: str = Form(""),
+):
+    try:
+        left_kind = _file_kind(left_file.filename)
+        right_kind = _file_kind(right_file.filename)
+        if left_kind != right_kind:
+            raise ValueError(
+                f"Both files must be the same type. Received {left_kind} and {right_kind}."
+            )
+
+        left_tasks, right_tasks = await _parse_uploaded_pair(
+            left_file=left_file,
+            right_file=right_file,
+            left_kind=left_kind,
+            left_column_map_json=left_column_map_json,
+            right_column_map_json=right_column_map_json,
+        )
+        session = create_preview_session(
+            file_kind=left_kind,
+            include_baseline=include_baseline,
+            left_tasks=left_tasks,
+            right_tasks=right_tasks,
+        )
+        response = build_preview_init_response(
+            session,
+            include_summaries=include_summaries,
+            offset=offset,
+            limit=limit,
+        )
+        return response.model_dump()
+    except (ValueError, MppParseError, KeyError) as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.get("/api/preview/rows")
+def preview_rows(
+    session_id: str,
+    include_summaries: bool = False,
+    offset: int = 0,
+    limit: int = 200,
+):
+    try:
+        session = get_preview_session(session_id)
+        response = build_preview_rows_response(
+            session,
+            include_summaries=include_summaries,
+            offset=offset,
+            limit=limit,
+        )
+        return response.model_dump()
+    except (ValueError, KeyError) as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/preview/matches/apply")
+def preview_matches_apply(payload: PreviewMatchEditRequest = Body(...)):
+    try:
+        session = get_preview_session(payload.session_id)
+        apply_preview_match_edits(session, payload.edits)
+        response = build_preview_rows_response(
+            session,
+            include_summaries=payload.include_summaries,
+            offset=payload.offset,
+            limit=payload.limit,
+        )
+        return response.model_dump()
+    except (ValueError, KeyError) as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/preview/analyze")
+def preview_analyze(payload: PreviewAnalyzeRequest = Body(...)):
+    try:
+        session = get_preview_session(payload.session_id)
+        result = analyze_preview_session(session, assignment_map=LAST_ASSIGNMENTS)
+        return _set_last_result(result).model_dump()
+    except (ValueError, KeyError) as exc:
         return JSONResponse(status_code=400, content={"error": str(exc)})
 
 

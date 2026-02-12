@@ -135,3 +135,72 @@ class AttributionBulkFilter(BaseModel):
 class AttributionApplyRequest(BaseModel):
     assignments: list[AttributionAssignment] = Field(default_factory=list)
     bulk: AttributionBulkFilter | None = None
+
+
+class PreviewTask(BaseModel):
+    uid: int
+    name: str
+    is_summary: bool = False
+    outline_level: int | None = None
+    start: date | None = None
+    finish: date | None = None
+    baseline_start: date | None = None
+    baseline_finish: date | None = None
+    predecessors: list[int] = Field(default_factory=list)
+    percent_complete: float | None = None
+
+
+class PreviewTaskOption(BaseModel):
+    uid: int
+    name: str
+
+
+class PreviewRow(BaseModel):
+    row_key: str
+    left: PreviewTask | None = None
+    right: PreviewTask | None = None
+    confidence: float = 0.0
+    confidence_band: Literal["green", "amber", "red"] = "red"
+    match_reason: str = ""
+    status: Literal["matched", "left_only", "right_only"] = "matched"
+
+
+class PreviewSessionMeta(BaseModel):
+    session_id: str
+    file_kind: Literal[".mpp", ".xml", ".csv"]
+    include_baseline: bool = False
+    include_summaries: bool = False
+    offset: int = 0
+    limit: int = 200
+    total_rows: int = 0
+    has_more: bool = False
+    timeline_start: date | None = None
+    timeline_finish: date | None = None
+    overrides: list[MatchOverride] = Field(default_factory=list)
+
+
+class PreviewRowsResponse(BaseModel):
+    session: PreviewSessionMeta
+    rows: list[PreviewRow] = Field(default_factory=list)
+
+
+class PreviewInitResponse(PreviewRowsResponse):
+    left_leaf_options: list[PreviewTaskOption] = Field(default_factory=list)
+    right_leaf_options: list[PreviewTaskOption] = Field(default_factory=list)
+
+
+class PreviewMatchEdit(BaseModel):
+    left_uid: int
+    right_uid: int | None = None
+
+
+class PreviewMatchEditRequest(BaseModel):
+    session_id: str
+    edits: list[PreviewMatchEdit] = Field(default_factory=list)
+    include_summaries: bool = False
+    offset: int = 0
+    limit: int = 200
+
+
+class PreviewAnalyzeRequest(BaseModel):
+    session_id: str

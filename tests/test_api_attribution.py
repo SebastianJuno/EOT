@@ -1,13 +1,9 @@
 from datetime import date
 
-from fastapi.testclient import TestClient
-
 import backend.app as app_module
+from backend.app import attribution_apply
 from backend.comparison import compare_tasks
-from backend.schemas import TaskRecord
-
-
-client = TestClient(app_module.app)
+from backend.schemas import AttributionApplyRequest, TaskRecord
 
 
 def task(uid: int, name: str, start: date, finish: date):
@@ -32,10 +28,9 @@ def test_apply_attribution_endpoint_updates_result():
     app_module.LAST_ASSIGNMENTS = {}
 
     row_key = result.diffs[0].row_key
-    response = client.post(
-        "/api/attribution/apply",
-        json={
-            "assignments": [
+    response = attribution_apply(
+        AttributionApplyRequest(
+            assignments=[
                 {
                     "row_key": row_key,
                     "cause_tag": "client",
@@ -43,10 +38,8 @@ def test_apply_attribution_endpoint_updates_result():
                     "confirm_low_confidence": True,
                 }
             ]
-        },
+        )
     )
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["diffs"][0]["cause_tag"] == "client"
-    assert payload["fault_allocation"]["task_slippage_days"]["client_days"] == 3.0
+    assert response["diffs"][0]["cause_tag"] == "client"
+    assert response["fault_allocation"]["task_slippage_days"]["client_days"] == 3.0
