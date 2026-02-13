@@ -17,7 +17,7 @@ Offline, single-user app for comparing programme versions for delay/claims prepa
 1. Bootstrap tools:
 
 ```bash
-cd /Users/sebastian.bujnowski/Documents/New\ project\ 2
+cd ~/Documents/<project-folder>
 make bootstrap-macos
 ```
 
@@ -35,8 +35,8 @@ make open-local-app
 
 Or double-click:
 
-- `/Users/sebastian.bujnowski/Documents/EOT Diff Tool/local-app/EOT Diff Tool.app`
-- `/Users/sebastian.bujnowski/Documents/EOT Diff Tool/Run EOT Diff Tool.command`
+- `local-app/EOT Diff Tool.app`
+- `Run EOT Diff Tool.command`
 
 ## Shareable artifact
 
@@ -48,7 +48,7 @@ make package-macos
 
 Output:
 
-- `/Users/sebastian.bujnowski/Documents/EOT Diff Tool/dist/EOT-Diff-Tool-mac-universal.zip`
+- `dist/EOT-Diff-Tool-mac-universal.zip`
 
 ## Colleague launch flow
 

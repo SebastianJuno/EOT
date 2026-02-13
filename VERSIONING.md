@@ -56,7 +56,7 @@ echo "X.Y.Z" > VERSION
 3. Verify app behavior:
 
 ```bash
-cd /Users/sebastian.bujnowski/Documents/New\ project\ 2
+cd ~/Documents/<project-folder>
 make setup
 make build-parser
 make test

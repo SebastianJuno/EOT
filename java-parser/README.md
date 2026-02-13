@@ -5,7 +5,7 @@ This component parses `.mpp` files using MPXJ and prints JSON for the Python bac
 ## Build
 
 ```bash
-cd /Users/sebastian.bujnowski/Documents/New\ project\ 2/java-parser
+cd ~/Documents/<project-folder>/java-parser
 mvn -DskipTests -Dmaven.test.skip=true clean package
 ```
 

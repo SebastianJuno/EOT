@@ -7,14 +7,14 @@ Build a desktop `.app` your colleagues can launch from Finder without terminal u
 ## Step 1: Prepare build machine
 
 ```bash
-cd /Users/sebastian.bujnowski/Documents/New\ project\ 2
+cd ~/Documents/<project-folder>
 make bootstrap-macos
 ```
 
 ## Step 2: Build and install a local app in this repository
 
 ```bash
-cd /Users/sebastian.bujnowski/Documents/New\ project\ 2
+cd ~/Documents/<project-folder>
 make install-local-app
 ```
 
@@ -34,7 +34,7 @@ Or double-click:
 ## Step 3: Build zipped share artifact
 
 ```bash
-cd /Users/sebastian.bujnowski/Documents/New\ project\ 2
+cd ~/Documents/<project-folder>
 make package-macos
 ```
 
