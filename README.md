@@ -35,8 +35,8 @@ make open-local-app
 
 Or double-click:
 
-- `/Users/sebastian.bujnowski/Documents/New project 2/local-app/EOT Diff Tool.app`
-- `/Users/sebastian.bujnowski/Documents/New project 2/Run EOT Diff Tool.command`
+- `/Users/sebastian.bujnowski/Documents/EOT Diff Tool/local-app/EOT Diff Tool.app`
+- `/Users/sebastian.bujnowski/Documents/EOT Diff Tool/Run EOT Diff Tool.command`
 
 ## Shareable artifact
 
@@ -48,7 +48,7 @@ make package-macos
 
 Output:
 
-- `/Users/sebastian.bujnowski/Documents/New project 2/dist/EOT-Diff-Tool-mac-universal.zip`
+- `/Users/sebastian.bujnowski/Documents/EOT Diff Tool/dist/EOT-Diff-Tool-mac-universal.zip`
 
 ## Colleague launch flow
 
