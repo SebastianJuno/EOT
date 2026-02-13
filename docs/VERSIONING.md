@@ -15,9 +15,9 @@ Rules:
 
 ## Single source of truth
 
-- Repo release version is stored in `/VERSION`.
+- Repo release version is stored in `/config/VERSION`.
 - Use plain semantic version without prefix (example: `0.1.0`).
-- Backend API version and desktop bundle version are derived from `/VERSION`.
+- Backend API version and desktop bundle version are derived from `/config/VERSION`.
 
 ## Branch strategy
 
@@ -47,20 +47,20 @@ Examples:
 - move items from `Unreleased` into new version section.
 - add release date.
 
-2. Set release version in `/VERSION`:
+2. Set release version in `/config/VERSION`:
 
 ```bash
-echo "X.Y.Z" > VERSION
+echo "X.Y.Z" > config/VERSION
 ```
 
 3. Verify app behavior:
 
 ```bash
 cd ~/Documents/<project-folder>
-make setup
-make build-parser
-make test
-make package-macos
+make -f scripts/Makefile setup
+make -f scripts/Makefile build-parser
+make -f scripts/Makefile test
+make -f scripts/Makefile package-macos
 ```
 
 4. Commit release changes:

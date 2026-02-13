@@ -8,34 +8,34 @@ Build a desktop `.app` your colleagues can launch from Finder without terminal u
 
 ```bash
 cd ~/Documents/<project-folder>
-make bootstrap-macos
+make -f scripts/Makefile bootstrap-macos
 ```
 
 ## Step 2: Build and install a local app in this repository
 
 ```bash
 cd ~/Documents/<project-folder>
-make install-local-app
+make -f scripts/Makefile install-local-app
 ```
 
 Expected local app:
-- `local-app/EOT Diff Tool.app`
+- `EOT Diff Tool.app`
 
 Open it with:
 
 ```bash
-make open-local-app
+make -f scripts/Makefile open-local-app
 ```
 
 Or double-click:
-- `local-app/EOT Diff Tool.app`
-- `Run EOT Diff Tool.command`
+- `EOT Diff Tool.app`
+- `scripts/Run EOT Diff Tool.command`
 
 ## Step 3: Build zipped share artifact
 
 ```bash
 cd ~/Documents/<project-folder>
-make package-macos
+make -f scripts/Makefile package-macos
 ```
 
 Expected output:

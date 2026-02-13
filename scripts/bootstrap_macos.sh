@@ -51,11 +51,11 @@ python3.12 --version
 
 log "Project setup"
 cd "$ROOT_DIR"
-make setup
-make build-parser
+make -f scripts/Makefile setup
+make -f scripts/Makefile build-parser
 
 log "Bootstrap complete"
 echo "Desktop dev run:"
-echo "  cd '$ROOT_DIR' && make run-desktop-dev"
+echo "  cd '$ROOT_DIR' && make -f scripts/Makefile run-desktop-dev"
 echo "Desktop package build:"
-echo "  cd '$ROOT_DIR' && make package-macos"
+echo "  cd '$ROOT_DIR' && make -f scripts/Makefile package-macos"

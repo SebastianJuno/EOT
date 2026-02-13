@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 if [ ! -x ".venv/bin/python" ]; then
-  echo "ERROR: .venv not found. Run 'make setup' first."
+  echo "ERROR: .venv not found. Run 'make -f scripts/Makefile setup' first."
   exit 1
 fi
 

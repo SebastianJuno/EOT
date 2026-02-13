@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-VERSION_FILE = ROOT_DIR / "VERSION"
+VERSION_FILE = ROOT_DIR / "config" / "VERSION"
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
 

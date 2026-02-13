@@ -12,16 +12,16 @@ required_paths = {
     ROOT / "frontend": "Missing frontend folder. Confirm repo checkout is complete.",
     ROOT / "java-parser": "Missing java-parser folder. Confirm repo checkout is complete.",
     plist_path: "Missing desktop/Info.plist. Confirm desktop packaging assets exist.",
-    ROOT / "VERSION": "Missing VERSION file. Confirm release metadata exists.",
+    ROOT / "config" / "VERSION": "Missing config/VERSION file. Confirm release metadata exists.",
 }
 for path, hint in required_paths.items():
     if not path.exists():
         raise SystemExit(f"Missing required path: {path}\nHint: {hint}")
 
 info_plist = plistlib.loads(plist_path.read_bytes())
-version = (ROOT / "VERSION").read_text(encoding="utf-8").strip().lstrip("v")
+version = (ROOT / "config" / "VERSION").read_text(encoding="utf-8").strip().lstrip("v")
 if version.count(".") != 2:
-    raise SystemExit(f"Invalid VERSION value: {version!r}. Expected semantic version (e.g. 0.1.0).")
+    raise SystemExit(f"Invalid config/VERSION value: {version!r}. Expected semantic version (e.g. 0.1.0).")
 info_plist["CFBundleShortVersionString"] = version
 info_plist["CFBundleVersion"] = version
 
@@ -34,7 +34,7 @@ hiddenimports += collect_submodules("webview")
 jar_path = ROOT / "java-parser" / "target" / "mpp-extractor-1.0.0-jar-with-dependencies.jar"
 if not jar_path.exists():
     raise SystemExit(
-        f"Missing parser jar: {jar_path}. Run 'make build-parser' before packaging."
+        f"Missing parser jar: {jar_path}. Run 'make -f scripts/Makefile build-parser' before packaging."
     )
 
 a = Analysis(

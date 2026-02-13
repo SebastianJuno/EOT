@@ -10,16 +10,16 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
 fi
 
 if [[ ! -x .venv/bin/python ]]; then
-  echo "ERROR: .venv missing. Run 'make setup' first."
+  echo "ERROR: .venv missing. Run 'make -f scripts/Makefile setup' first."
   exit 1
 fi
 
 . .venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt
-pip install -r requirements-desktop.txt
+pip install -r backend/requirements.txt
+pip install -r desktop/requirements.txt
 
-make build-parser
+make -f scripts/Makefile build-parser
 
 rm -rf build dist
 

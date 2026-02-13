@@ -18,32 +18,32 @@ Offline, single-user app for comparing programme versions for delay/claims prepa
 
 ```bash
 cd ~/Documents/<project-folder>
-make bootstrap-macos
+make -f scripts/Makefile bootstrap-macos
 ```
 
 2. Build app and install a local `.app` inside the repository:
 
 ```bash
-make install-local-app
+make -f scripts/Makefile install-local-app
 ```
 
 3. Open local app:
 
 ```bash
-make open-local-app
+make -f scripts/Makefile open-local-app
 ```
 
 Or double-click:
 
-- `local-app/EOT Diff Tool.app`
-- `Run EOT Diff Tool.command`
+- `EOT Diff Tool.app`
+- `scripts/Run EOT Diff Tool.command`
 
 ## Shareable artifact
 
 Build zipped artifact:
 
 ```bash
-make package-macos
+make -f scripts/Makefile package-macos
 ```
 
 Output:

@@ -43,7 +43,7 @@ python3 sample-data/generate_complex_samples.py
 Or with Make:
 
 ```bash
-make generate-sample-data
+make -f scripts/Makefile generate-sample-data
 ```
 
 Generation is idempotent and deterministic (stable ordering and formatting).

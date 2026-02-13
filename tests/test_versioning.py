@@ -9,7 +9,7 @@ from desktop import prereq
 
 
 def test_version_file_is_backend_source_of_truth() -> None:
-    version_file = Path(__file__).resolve().parent.parent / "VERSION"
+    version_file = Path(__file__).resolve().parent.parent / "config" / "VERSION"
     expected = version_file.read_text(encoding="utf-8").strip()
     read_version.cache_clear()
     assert read_version() == expected

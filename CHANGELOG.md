@@ -10,7 +10,9 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - None yet.
 
 ### Changed
-- None yet.
+- Reorganized repository root so only `README.md`, `CHANGELOG.md`, and `EOT Diff Tool.app` remain as top-level non-hidden entries.
+- Moved release metadata to `config/VERSION`, developer make targets to `scripts/Makefile`, and Python requirements files into `backend/requirements.txt` and `desktop/requirements.txt`.
+- Updated scripts and docs to use `make -f scripts/Makefile ...` with the new folder structure.
 
 ### Fixed
 - None yet.
