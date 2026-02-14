@@ -189,6 +189,17 @@
         <p id="error-text"></p>
       </section>
     </main>
+    <div id="loading-overlay" class="loading-overlay" hidden aria-live="polite" aria-busy="true">
+      <div class="loading-card">
+        <p class="loading-label">Processing</p>
+        <h2 id="loading-stage" class="loading-stage">Starting</h2>
+        <p id="loading-detail" class="loading-detail"></p>
+        <div class="loading-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div id="loading-fill" class="loading-fill"></div>
+        </div>
+        <p id="loading-pct" class="loading-pct">0%</p>
+      </div>
+    </div>
     <script src="/app.js"></script>
   </body>
 </html>

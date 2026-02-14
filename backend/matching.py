@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from bisect import bisect_left, bisect_right
 from collections import defaultdict
 from difflib import SequenceMatcher
 
 from .schemas import MatchCandidate, MatchOverride, TaskRecord
+
+MAX_FALLBACK_POOL = 120
 
 
 def _name_similarity(left_name: str, right_name: str) -> float:
@@ -60,10 +63,44 @@ def auto_match(
         if override.right_uid in right_by_uid:
             matched[override.left_uid] = override.right_uid
             locked_right_uids.add(override.right_uid)
+    unmatched_right_uids = set(right_by_uid) - locked_right_uids
 
     name_index: dict[str, list[TaskRecord]] = defaultdict(list)
     for task in right_tasks:
         name_index[task.name.strip().lower()].append(task)
+
+    dated_right = sorted(
+        ((task.start.toordinal(), task.uid, task) for task in right_tasks if task.start is not None),
+        key=lambda row: row[0],
+    )
+    dated_ordinals = [row[0] for row in dated_right]
+
+    def fallback_pool(left: TaskRecord, available: set[int]) -> list[TaskRecord]:
+        if not available:
+            return []
+
+        pool: list[TaskRecord] = []
+        if left.start is not None and dated_right:
+            target = left.start.toordinal()
+            for window in (14, 30, 60, 120):
+                lo = bisect_left(dated_ordinals, target - window)
+                hi = bisect_right(dated_ordinals, target + window)
+                pool = [task for _, uid, task in dated_right[lo:hi] if uid in available]
+                if pool:
+                    break
+
+        if not pool:
+            pool = [task for task in right_tasks if task.uid in available]
+
+        if len(pool) <= MAX_FALLBACK_POOL:
+            return pool
+
+        if left.start is None:
+            return pool[:MAX_FALLBACK_POOL]
+
+        target = left.start.toordinal()
+        pool.sort(key=lambda task: abs(task.start.toordinal() - target) if task.start is not None else 10**9)
+        return pool[:MAX_FALLBACK_POOL]
 
     candidates: list[MatchCandidate] = []
 
@@ -81,9 +118,9 @@ def auto_match(
             )
             continue
 
-        pool = [t for t in name_index.get(left.name.strip().lower(), []) if t.uid not in locked_right_uids]
+        pool = [t for t in name_index.get(left.name.strip().lower(), []) if t.uid in unmatched_right_uids]
         if not pool:
-            pool = [t for t in right_tasks if t.uid not in locked_right_uids]
+            pool = fallback_pool(left, unmatched_right_uids)
 
         scored = []
         for right in pool:
@@ -97,6 +134,7 @@ def auto_match(
         best_conf, reason, best_right = scored[0]
         matched[left.uid] = best_right.uid
         locked_right_uids.add(best_right.uid)
+        unmatched_right_uids.discard(best_right.uid)
         candidates.append(
             MatchCandidate(
                 left_uid=left.uid,

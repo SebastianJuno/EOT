@@ -7,12 +7,22 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 ## [Unreleased]
 
 ### Added
-- None yet.
+- Deterministic performance benchmark harness at `scripts/perf_bench.py` covering compare and preview hot paths.
+- Repository baseline benchmark file at `config/perf-baseline.json` and report output path `build/perf-latest.json`.
+- Background progress-job framework at `backend/progress_jobs.py` with in-memory lifecycle tracking (`queued`, `running`, `completed`, `failed`), TTL cleanup, and capped retention.
+- Additive progress APIs: `POST /api/progress/compare-auto`, `POST /api/progress/preview/init`, `POST /api/progress/preview/analyze`, and `GET /api/progress/jobs/{job_id}`.
+- Coverage for progress APIs and desktop splash startup flow in `tests/test_progress_jobs.py` and expanded `tests/test_desktop_main.py`.
 
 ### Changed
 - Reorganized repository root so only `README.md`, `CHANGELOG.md`, and `EOT Diff Tool.app` remain as top-level non-hidden entries.
 - Moved release metadata to `config/VERSION`, developer make targets to `scripts/Makefile`, and Python requirements files into `backend/requirements.txt` and `desktop/requirements.txt`.
 - Updated scripts and docs to use `make -f scripts/Makefile ...` with the new folder structure.
+- Added `make -f scripts/Makefile perf-audit` (report) and `perf-check` (threshold-enforced regression check) developer targets.
+- Optimized matching and comparison paths to reduce worst-case fallback matching cost and remove repeated candidate lookup scans.
+- Cached preview session leaf/summary partitions to avoid repeated filtering during row builds.
+- Frontend compare/analysis actions now use job-based progress polling with a full-screen minimalist loading overlay that appears immediately and updates through backend stages.
+- Desktop startup now uses an immediate pywebview splash progress screen and transitions the same window into the main app URL after backend health succeeds, with fallback to dialog mode on splash failure.
+- Backend compare/preview orchestration refactored into reusable operation helpers that optionally emit progress updates while preserving existing synchronous endpoints.
 
 ### Fixed
 - None yet.

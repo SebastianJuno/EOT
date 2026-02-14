@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Callable, Sequence
 
 from desktop.backend_runner import (
     BackendHandle,
@@ -24,6 +24,7 @@ from desktop.safety import (
     record_launch_success,
     release_ui_lock,
 )
+from desktop.window import launch_window, launch_with_startup_splash
 
 JAVA17_URL = "https://adoptium.net/temurin/releases/?version=17"
 
@@ -174,6 +175,98 @@ def _run_backend_mode(host: str, port: int, session_id: str) -> int:
         return 1
 
 
+def _run_startup_sequence(
+    *,
+    show_progress: Callable[[int, int, str], None],
+    close_progress: Callable[[], None],
+    open_app: Callable[[str], None],
+) -> tuple[int, BackendHandle | None]:
+    handle: BackendHandle | None = None
+
+    show_progress(1, 5, "Checking startup safety")
+    blocked, remaining_seconds = check_temporary_block()
+    if blocked:
+        close_progress()
+        minutes = max(1, math.ceil(remaining_seconds / 60))
+        log_event(f"launch_blocked remaining_seconds={remaining_seconds}")
+        _show_error(
+            "Startup Paused",
+            (
+                "Startup is temporarily paused due to repeated launch failures.\n\n"
+                f"Please wait about {minutes} minute(s) and relaunch.\n"
+                f"Logs: {LOG_DIR}"
+            ),
+            allow_open_logs=True,
+        )
+        return 1, None
+
+    show_progress(2, 5, "Checking prerequisites")
+    prereq = check_prerequisites()
+    if not prereq.ok:
+        close_progress()
+        if not _ask_install(prereq.message):
+            _show_error(
+                "Prerequisites Missing",
+                "Cannot start app without Java 17+.\nPlease install prerequisites and relaunch.",
+            )
+            return 1, None
+
+        post_install = install_prerequisites()
+        if not post_install.ok:
+            _show_install_failed_help(post_install.message)
+            return 1, None
+        show_progress(2, 5, "Prerequisites installed")
+
+    last_failure: tuple[BackendHandle, HealthCheckResult] | None = None
+    for attempt in (1, 2):
+        show_progress(3, 5, f"Starting backend (attempt {attempt}/2)")
+        handle = start_backend()
+        log_event(
+            f"backend_health_attempt session_id={handle.session_id} attempt={attempt} "
+            f"port={handle.port} pid={handle.pid}"
+        )
+        show_progress(4, 5, f"Waiting for backend health (attempt {attempt}/2)")
+        health = wait_for_health(handle, timeout_seconds=30)
+        if health.ok:
+            log_event(
+                f"backend_healthy session_id={handle.session_id} attempt={attempt} "
+                f"elapsed={health.elapsed_seconds:.2f}s"
+            )
+            record_launch_success()
+            show_progress(5, 5, "Opening application window")
+            open_app(handle.base_url)
+            return 0, handle
+
+        log_event(
+            f"backend_unhealthy session_id={handle.session_id} attempt={attempt} "
+            f"reason={health.reason} exit_code={health.exit_code} "
+            f"elapsed={health.elapsed_seconds:.2f}s details={health.details!r}"
+        )
+        last_failure = (handle, health)
+        stop_backend(handle)
+        handle = None
+
+        if attempt == 1:
+            time.sleep(0.5)
+
+    blocked_now, blocked_seconds = record_launch_failure()
+    close_progress()
+    if last_failure is not None:
+        _show_backend_failure(
+            handle=last_failure[0],
+            result=last_failure[1],
+            blocked_now=blocked_now,
+            blocked_seconds=blocked_seconds,
+        )
+    else:
+        _show_error(
+            "Backend Error",
+            f"Backend failed to become healthy.\nLogs: {LOG_DIR}",
+            allow_open_logs=True,
+        )
+    return 1, None
+
+
 def _run_ui_mode() -> int:
     ui_lock = acquire_ui_lock()
     if ui_lock is None:
@@ -185,95 +278,33 @@ def _run_ui_mode() -> int:
         return 1
 
     handle: BackendHandle | None = None
-    progress = StartupProgressWindow()
     try:
-        progress.show(1, 5, "Checking startup safety")
-        blocked, remaining_seconds = check_temporary_block()
-        if blocked:
-            progress.close()
-            minutes = max(1, math.ceil(remaining_seconds / 60))
-            log_event(f"launch_blocked remaining_seconds={remaining_seconds}")
-            _show_error(
-                "Startup Paused",
-                (
-                    "Startup is temporarily paused due to repeated launch failures.\n\n"
-                    f"Please wait about {minutes} minute(s) and relaunch.\n"
-                    f"Logs: {LOG_DIR}"
-                ),
-                allow_open_logs=True,
-            )
-            return 1
-
-        progress.show(2, 5, "Checking prerequisites")
-        prereq = check_prerequisites()
-        if not prereq.ok:
-            progress.close()
-            if not _ask_install(prereq.message):
-                _show_error(
-                    "Prerequisites Missing",
-                    "Cannot start app without Java 17+.\nPlease install prerequisites and relaunch.",
+        try:
+            def run_with_splash(splash) -> int:
+                nonlocal handle
+                rc, final_handle = _run_startup_sequence(
+                    show_progress=lambda step, total, message: splash.update(step, total, message),
+                    close_progress=splash.close,
+                    open_app=splash.load_app,
                 )
-                return 1
+                handle = final_handle
+                return rc
 
-            post_install = install_prerequisites()
-            if not post_install.ok:
-                _show_install_failed_help(post_install.message)
-                return 1
-            progress.show(2, 5, "Prerequisites installed")
-
-        last_failure: tuple[BackendHandle, HealthCheckResult] | None = None
-        for attempt in (1, 2):
-            progress.show(3, 5, f"Starting backend (attempt {attempt}/2)")
-            handle = start_backend()
-            log_event(
-                f"backend_health_attempt session_id={handle.session_id} attempt={attempt} "
-                f"port={handle.port} pid={handle.pid}"
-            )
-            progress.show(4, 5, f"Waiting for backend health (attempt {attempt}/2)")
-            health = wait_for_health(handle, timeout_seconds=30)
-            if health.ok:
-                log_event(
-                    f"backend_healthy session_id={handle.session_id} attempt={attempt} "
-                    f"elapsed={health.elapsed_seconds:.2f}s"
+            return launch_with_startup_splash(run_with_splash)
+        except Exception as exc:
+            log_event(f"startup_splash_fallback error={exc!r}")
+            progress = StartupProgressWindow()
+            try:
+                rc, final_handle = _run_startup_sequence(
+                    show_progress=progress.show,
+                    close_progress=progress.close,
+                    open_app=lambda base_url: (progress.close(), launch_window(base_url)),
                 )
-                record_launch_success()
-                from desktop.window import launch_window
-
-                progress.show(5, 5, "Opening application window")
+                handle = final_handle
+                return rc
+            finally:
                 progress.close()
-                launch_window(handle.base_url)
-                return 0
-
-            log_event(
-                f"backend_unhealthy session_id={handle.session_id} attempt={attempt} "
-                f"reason={health.reason} exit_code={health.exit_code} "
-                f"elapsed={health.elapsed_seconds:.2f}s details={health.details!r}"
-            )
-            last_failure = (handle, health)
-            stop_backend(handle)
-            handle = None
-
-            if attempt == 1:
-                time.sleep(0.5)
-
-        blocked_now, blocked_seconds = record_launch_failure()
-        progress.close()
-        if last_failure is not None:
-            _show_backend_failure(
-                handle=last_failure[0],
-                result=last_failure[1],
-                blocked_now=blocked_now,
-                blocked_seconds=blocked_seconds,
-            )
-        else:
-            _show_error(
-                "Backend Error",
-                f"Backend failed to become healthy.\nLogs: {LOG_DIR}",
-                allow_open_logs=True,
-            )
-        return 1
     finally:
-        progress.close()
         stop_backend(handle)
         release_ui_lock(ui_lock)
 

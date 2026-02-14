@@ -3,7 +3,7 @@ PYTHON ?= python3.12
 VENV ?= $(ROOT_DIR)/.venv
 VENV_PY ?= $(VENV)/bin/python
 
-.PHONY: setup test run run-open run-desktop-dev package-macos install-local-app open-local-app build-parser check-python check-venv clean-venv bootstrap-macos generate-sample-data
+.PHONY: setup test run run-open run-desktop-dev package-macos install-local-app open-local-app build-parser check-python check-venv clean-venv bootstrap-macos generate-sample-data perf-audit perf-check
 
 check-python:
 	@command -v $(PYTHON) >/dev/null || (echo "ERROR: $(PYTHON) not found. Install Python 3.12 first."; exit 1)
@@ -53,3 +53,9 @@ bootstrap-macos:
 
 generate-sample-data:
 	cd "$(ROOT_DIR)" && $(PYTHON) sample-data/generate_complex_samples.py
+
+perf-audit: check-venv
+	cd "$(ROOT_DIR)" && . "$(VENV)/bin/activate" && python scripts/perf_bench.py
+
+perf-check: check-venv
+	cd "$(ROOT_DIR)" && . "$(VENV)/bin/activate" && python scripts/perf_bench.py --enforce
