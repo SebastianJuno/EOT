@@ -7,6 +7,17 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 ## [Unreleased]
 
 ### Added
+- None yet.
+
+### Changed
+- None yet.
+
+### Fixed
+- None yet.
+
+## [0.1.1] - 2026-02-14
+
+### Added
 - Deterministic performance benchmark harness at `scripts/perf_bench.py` covering compare and preview hot paths.
 - Repository baseline benchmark file at `config/perf-baseline.json` and report output path `build/perf-latest.json`.
 - Background progress-job framework at `backend/progress_jobs.py` with in-memory lifecycle tracking (`queued`, `running`, `completed`, `failed`), TTL cleanup, and capped retention.
@@ -59,5 +70,6 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Upload validation messages improved for unsupported or missing file extensions.
 - Preview and compare error paths normalized to JSON error responses.
 
-[Unreleased]: https://example.invalid/compare/v0.1.0...HEAD
+[Unreleased]: https://example.invalid/compare/v0.1.1...HEAD
+[0.1.1]: https://example.invalid/compare/v0.1.0...v0.1.1
 [0.1.0]: https://example.invalid/releases/tag/v0.1.0
