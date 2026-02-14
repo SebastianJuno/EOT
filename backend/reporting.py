@@ -31,6 +31,11 @@ def build_csv(result: CompareResult) -> bytes:
     writer.writerow(
         [
             "status",
+            "change_category",
+            "requires_user_input",
+            "auto_reason",
+            "flow_on_from_right_uids",
+            "auto_overridden",
             "left_uid",
             "right_uid",
             "left_name",
@@ -54,6 +59,11 @@ def build_csv(result: CompareResult) -> bytes:
         writer.writerow(
             [
                 diff.status,
+                diff.change_category,
+                diff.requires_user_input,
+                diff.auto_reason or "",
+                ",".join(str(uid) for uid in diff.flow_on_from_right_uids),
+                diff.auto_overridden,
                 diff.left_uid,
                 diff.right_uid,
                 diff.left_name,
@@ -117,6 +127,15 @@ def build_pdf(result: CompareResult, output_path: Path) -> Path:
         40,
         y,
         (
+            f"Action required: {summary.action_required_tasks} | Auto-resolved: {summary.auto_resolved_tasks} | "
+            f"Flow-on auto: {summary.auto_flow_on_tasks} | Identity conflicts: {summary.identity_conflict_tasks}"
+        ),
+    )
+    y -= 14
+    c.drawString(
+        40,
+        y,
+        (
             f"Changed: {summary.changed_tasks} | Added: {summary.added_tasks} | "
             f"Removed: {summary.removed_tasks} | Unchanged: {summary.unchanged_tasks}"
         ),
@@ -151,15 +170,26 @@ def build_pdf(result: CompareResult, output_path: Path) -> Path:
             40,
             y,
             (
-                f"[{diff.status.upper()}] {name} | Confidence: {diff.confidence}% ({diff.confidence_band}) | "
-                f"Cause: {diff.cause_tag} | Attr: {diff.attribution_status}"
+                f"[{diff.status.upper()}] {name} | Category: {diff.change_category} | "
+                f"Action required: {diff.requires_user_input} | Attr: {diff.attribution_status}"
             )[:150],
         )
         y -= 12
 
         c.setFont("Helvetica", 8)
-        c.drawString(55, y, f"Reason code: {diff.reason_code or '-'} | Slippage days: {diff.task_slippage_days}")
+        c.drawString(
+            55,
+            y,
+            (
+                f"Cause: {diff.cause_tag} | Reason code: {diff.reason_code or '-'} | "
+                f"Slippage days: {diff.task_slippage_days}"
+            )[:130],
+        )
         y -= 11
+
+        if diff.auto_reason:
+            c.drawString(55, y, f"Auto reason: {diff.auto_reason}"[:130])
+            y -= 11
 
         if not diff.evidence:
             c.drawString(55, y, "No field-level differences.")

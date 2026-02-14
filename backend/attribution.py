@@ -58,6 +58,9 @@ def _determine_status(diff: TaskDiff, confirmed_low_confidence: bool) -> tuple[A
     if diff.status not in ATTRIBUTION_SCOPE:
         return "ready", False
 
+    if not diff.requires_user_input:
+        return "ready", False
+
     if diff.confidence < 50 and not confirmed_low_confidence:
         return "pending_low_confidence", False
 
@@ -77,6 +80,13 @@ def initialize_attribution(diffs: list[TaskDiff], assignment_map: dict[str, dict
         prev = assignment_map.get(diff.row_key, {})
         diff.cause_tag = prev.get("cause_tag", diff.cause_tag)
         diff.reason_code = prev.get("reason_code", diff.reason_code)
+        override_auto = bool(prev.get("override_auto", diff.auto_overridden))
+        diff.auto_overridden = override_auto
+        if override_auto:
+            diff.change_category = "manual_override_actionable"
+            diff.requires_user_input = True
+            diff.auto_reason = "Promoted from automated classification by user override."
+            diff.flow_on_from_right_uids = []
         confirmed_low_confidence = bool(prev.get("confirm_low_confidence", False))
 
         status, included = _determine_status(diff, confirmed_low_confidence)
@@ -95,6 +105,7 @@ def build_assignment_map(diffs: list[TaskDiff], previous: dict[str, dict] | None
             "cause_tag": diff.cause_tag,
             "reason_code": diff.reason_code,
             "confirm_low_confidence": prev.get("confirm_low_confidence", False),
+            "override_auto": prev.get("override_auto", diff.auto_overridden),
         }
     return out
 
@@ -115,10 +126,17 @@ def apply_assignments(
             continue
         diff.cause_tag = item.cause_tag
         diff.reason_code = item.reason_code
+        if item.override_auto:
+            diff.auto_overridden = True
+            diff.change_category = "manual_override_actionable"
+            diff.requires_user_input = True
+            diff.auto_reason = "Promoted from automated classification by user override."
+            diff.flow_on_from_right_uids = []
         assignment_map[item.row_key] = {
             "cause_tag": item.cause_tag,
             "reason_code": item.reason_code,
             "confirm_low_confidence": item.confirm_low_confidence,
+            "override_auto": item.override_auto,
         }
 
     if bulk is not None:
@@ -136,9 +154,14 @@ def apply_assignments(
                 "cause_tag": bulk.cause_tag,
                 "reason_code": bulk.reason_code,
                 "confirm_low_confidence": bulk.confirm_low_confidence,
+                "override_auto": bool(assignment_map.get(diff.row_key, {}).get("override_auto", diff.auto_overridden)),
             }
 
     initialize_attribution(result.diffs, assignment_map)
+    result.summary.action_required_tasks = sum(1 for diff in result.diffs if diff.requires_user_input)
+    result.summary.auto_resolved_tasks = sum(1 for diff in result.diffs if not diff.requires_user_input)
+    result.summary.auto_flow_on_tasks = sum(1 for diff in result.diffs if diff.change_category == "date_shift_flow_on")
+    result.summary.identity_conflict_tasks = sum(1 for diff in result.diffs if diff.change_category == "identity_conflict")
     result.fault_allocation = compute_fault_allocation(result)
     return result, assignment_map
 
@@ -148,7 +171,7 @@ def _project_share_by_row(result: CompareResult) -> dict[str, float]:
     contributors = [
         diff
         for diff in result.diffs
-        if diff.status == "changed" and diff.task_slippage_days > 0
+        if diff.status == "changed" and diff.task_slippage_days > 0 and (diff.requires_user_input or diff.auto_overridden)
     ]
 
     total_weight = sum(diff.task_slippage_days for diff in contributors)
@@ -169,6 +192,8 @@ def compute_fault_allocation(result: CompareResult) -> FaultAllocation:
 
     for diff in result.diffs:
         if diff.status not in ATTRIBUTION_SCOPE:
+            continue
+        if not diff.requires_user_input and not diff.auto_overridden:
             continue
 
         task_days = diff.task_slippage_days

@@ -49,5 +49,8 @@ def test_csv_contains_header_and_rows_with_attribution():
 
     assert "cause_tag" in csv_data
     assert "attribution_status" in csv_data
+    assert "change_category" in csv_data
+    assert "requires_user_input" in csv_data
+    assert "auto_reason" in csv_data
     assert "Fault Allocation Summary" in csv_data
     assert "SCL Reference" in csv_data

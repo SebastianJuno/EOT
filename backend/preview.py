@@ -185,12 +185,16 @@ def _build_leaf_rows(session: PreviewSession) -> list[PreviewRow]:
             candidate = candidate_map.get((left.uid, right.uid))
             confidence = candidate.confidence if candidate else 0.0
             reason = candidate.reason if candidate else "Provisional match"
+            match_needs_review = candidate.match_needs_review if candidate else False
+            match_flags = list(candidate.match_flags) if candidate else []
             band = confidence_band(confidence)
             status: Literal["matched", "left_only", "right_only"] = "matched"
             row_key = f"leaf:{left.uid}:{right.uid}"
         else:
             confidence = 0.0
             reason = "No right-side match"
+            match_needs_review = False
+            match_flags = []
             band = "red"
             status = "left_only"
             row_key = f"leaf:{left.uid}:none"
@@ -204,6 +208,8 @@ def _build_leaf_rows(session: PreviewSession) -> list[PreviewRow]:
                 confidence_band=band,
                 match_reason=reason,
                 status=status,
+                match_needs_review=match_needs_review,
+                match_flags=match_flags,
             )
         )
 
@@ -219,9 +225,12 @@ def _build_leaf_rows(session: PreviewSession) -> list[PreviewRow]:
                 confidence_band="red",
                 match_reason="No left-side match",
                 status="right_only",
+                match_needs_review=False,
+                match_flags=[],
             )
         )
 
+    rows.sort(key=lambda row: (not row.match_needs_review, row.status != "matched"))
     return rows
 
 

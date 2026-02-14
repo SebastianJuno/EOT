@@ -10,6 +10,9 @@ Offline, single-user app for comparing programme versions for delay/claims prepa
 - Auto file type detection by extension (`.mpp`, `.xml`, `.csv`).
 - Mixed file type uploads blocked with clear errors.
 - `.pp` direct upload blocked with CSV export guidance.
+- Actionable-first comparison UX: only rows requiring explanation are shown by default.
+- Automatic no-action classification for certain identity matches (`UID + normalized name + duration`) with optional manual override.
+- Propagation-aware date drift handling that auto-tags downstream flow-on shifts while keeping ambiguous cases actionable.
 - If auto prerequisite install fails, app shows manual fix instructions and a one-click Java 17 download link.
 
 ## Quick start (developer machine)

@@ -38,6 +38,8 @@ class MatchCandidate(BaseModel):
     right_uid: int
     confidence: float
     reason: str
+    match_needs_review: bool = False
+    match_flags: list[str] = Field(default_factory=list)
 
 
 class MatchOverride(BaseModel):
@@ -79,6 +81,24 @@ class TaskDiff(BaseModel):
     protocol_hint: str = (
         "Classify the dominant cause under SCL concepts: client risk event, contractor risk event, or neutral event."
     )
+    change_category: Literal[
+        "unchanged",
+        "identity_certain",
+        "identity_conflict",
+        "duration_change",
+        "predecessor_change",
+        "duration_predecessor_change",
+        "date_shift_flow_on",
+        "date_shift_unexplained",
+        "progress_or_baseline_change",
+        "added",
+        "removed",
+        "manual_override_actionable",
+    ] = "unchanged"
+    requires_user_input: bool = True
+    auto_reason: str | None = None
+    flow_on_from_right_uids: list[int] = Field(default_factory=list)
+    auto_overridden: bool = False
 
 
 class CompareSummary(BaseModel):
@@ -90,6 +110,10 @@ class CompareSummary(BaseModel):
     removed_tasks: int
     unchanged_tasks: int
     project_finish_delay_days: float = 0.0
+    action_required_tasks: int = 0
+    auto_resolved_tasks: int = 0
+    auto_flow_on_tasks: int = 0
+    identity_conflict_tasks: int = 0
 
 
 class FaultMetric(BaseModel):
@@ -121,6 +145,7 @@ class AttributionAssignment(BaseModel):
     cause_tag: CauseTag
     reason_code: ReasonCode = ""
     confirm_low_confidence: bool = False
+    override_auto: bool = False
 
 
 class AttributionBulkFilter(BaseModel):
@@ -163,6 +188,8 @@ class PreviewRow(BaseModel):
     confidence_band: Literal["green", "amber", "red"] = "red"
     match_reason: str = ""
     status: Literal["matched", "left_only", "right_only"] = "matched"
+    match_needs_review: bool = False
+    match_flags: list[str] = Field(default_factory=list)
 
 
 class PreviewSessionMeta(BaseModel):

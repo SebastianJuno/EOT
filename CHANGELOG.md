@@ -7,10 +7,15 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 ## [Unreleased]
 
 ### Added
-- None yet.
+- Compare result schema fields for actionable gating and automation audit (`change_category`, `requires_user_input`, `auto_reason`, flow-on source UIDs, and auto-override flags).
+- Preview row metadata for match-risk surfacing (`match_needs_review`, `match_flags`) with UID repurpose risk detection.
+- UI control to show/hide auto-resolved rows and per-row "Promote to Actionable" override action.
 
 ### Changed
-- None yet.
+- Matching now treats `UID + normalized name + duration` as a certain identity signature while treating UID-only alignment as non-authoritative.
+- Comparison classification now distinguishes identity-certain, identity-conflict, duration/predecessor changes, flow-on date drift, and unexplained date drift.
+- Attribution pipeline now respects actionable gating and supports promoting auto-resolved rows into actionable assessment.
+- Summary and report outputs now surface actionable counts, automation counts, and flow-on classifications.
 
 ### Fixed
 - None yet.

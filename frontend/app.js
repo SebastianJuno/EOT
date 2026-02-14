@@ -13,6 +13,7 @@ const errorText = document.getElementById("error-text");
 const summary = document.getElementById("summary");
 const allocation = document.getElementById("allocation");
 const diffBody = document.getElementById("diff-body");
+const diffShowAuto = document.getElementById("diff-show-auto");
 const overrideList = document.getElementById("override-list");
 
 const previewLeafOnly = document.getElementById("preview-leaf-only");
@@ -61,6 +62,7 @@ const state = {
   },
   lastRun: null,
   loadingJobId: null,
+  showAutoResolvedRows: false,
 };
 
 function escapeHtml(value) {
@@ -449,12 +451,14 @@ function renderPreviewMatchTable() {
     .map((row) => {
       const leftText = row.left ? `${row.left.uid} - ${escapeHtml(row.left.name)}` : "-";
       const rightText = row.right ? `${row.right.uid} - ${escapeHtml(row.right.name)}` : "-";
+      const reviewBadge = row.match_needs_review ? `<span class="pending">review needed</span>` : "";
+      const flagText = row.match_flags && row.match_flags.length ? ` (${escapeHtml(row.match_flags.join(", "))})` : "";
       return `
         <tr>
           <td>${leftText}</td>
           <td>${rightText}</td>
           <td>${row.confidence}%</td>
-          <td>${escapeHtml(row.match_reason || "")}</td>
+          <td>${escapeHtml(row.match_reason || "")}${flagText} ${reviewBadge}</td>
         </tr>
       `;
     });
@@ -537,6 +541,8 @@ function renderResult(json) {
   state.currentResult = json;
 
   summary.innerHTML = `
+    <p><strong>Action required:</strong> ${json.summary.action_required_tasks} | <strong>Auto-resolved:</strong> ${json.summary.auto_resolved_tasks}</p>
+    <p><strong>Auto flow-on:</strong> ${json.summary.auto_flow_on_tasks} | <strong>Identity conflicts:</strong> ${json.summary.identity_conflict_tasks}</p>
     <p><strong>Left leaf tasks:</strong> ${json.summary.total_left_leaf_tasks}</p>
     <p><strong>Right leaf tasks:</strong> ${json.summary.total_right_leaf_tasks}</p>
     <p><strong>Matched:</strong> ${json.summary.matched_tasks} | <strong>Changed:</strong> ${json.summary.changed_tasks}</p>
@@ -546,42 +552,68 @@ function renderResult(json) {
 
   renderAllocation(json);
 
-  diffBody.innerHTML = json.diffs
-    .map((diff) => {
+  const visibleDiffs = (json.diffs || []).filter((diff) => state.showAutoResolvedRows || diff.requires_user_input);
+  if (!visibleDiffs.length) {
+    diffBody.innerHTML = `
+      <tr>
+        <td colspan="9">No actionable rows in the current filter. Enable "Show auto-resolved rows" to review automated assumptions.</td>
+      </tr>
+    `;
+  } else {
+    diffBody.innerHTML = visibleDiffs
+      .map((diff) => {
       const task = diff.left_name || diff.right_name || "Unknown";
       const evidence = diff.evidence.length
         ? diff.evidence
             .map((e) => `${e.field}: ${escapeHtml(e.left_value)} -> ${escapeHtml(e.right_value)}`)
             .join("<br>")
         : "None";
+      const autoDetails = [];
+      if (diff.auto_reason) {
+        autoDetails.push(`<small class="muted-note">${escapeHtml(diff.auto_reason)}</small>`);
+      }
+      if (diff.flow_on_from_right_uids && diff.flow_on_from_right_uids.length) {
+        autoDetails.push(`<small class="muted-note">Flow-on from right UIDs: ${escapeHtml(diff.flow_on_from_right_uids.join(", "))}</small>`);
+      }
       const pendingBadge =
         diff.attribution_status === "pending_low_confidence"
           ? `<span class="pending">confirm red match</span>`
           : "";
-
-      return `
-        <tr data-row-key="${diff.row_key}">
-          <td><input type="checkbox" class="pick-row" data-row-key="${diff.row_key}" /></td>
-          <td>${diff.status}</td>
-          <td>${escapeHtml(task)}<br><small>${diff.left_uid || "-"} -> ${diff.right_uid || "-"}</small></td>
-          <td><span class="chip ${diff.confidence_band}">${diff.confidence}%</span></td>
-          <td>
+      const autoBadge = diff.requires_user_input ? "" : `<span class="pending">auto</span>`;
+      const promoteButton = diff.requires_user_input
+        ? ""
+        : `<button type="button" class="promote-auto" data-row-key="${diff.row_key}">Promote to Actionable</button>`;
+      const causeCell = diff.requires_user_input
+        ? `
             <select class="row-cause" data-row-key="${diff.row_key}">
               ${causeOptions(diff.cause_tag)}
             </select>
-          </td>
-          <td>
+          `
+        : `<small class="muted-note">${escapeHtml(diff.cause_tag)}</small>`;
+      const reasonCell = diff.requires_user_input
+        ? `
             <select class="row-reason" data-row-key="${diff.row_key}">
               ${reasonOptions(diff.reason_code)}
             </select>
-          </td>
-          <td>${diff.attribution_status} ${pendingBadge}</td>
+          `
+        : `<small class="muted-note">${escapeHtml(diff.reason_code || "n/a")}</small>`;
+
+      return `
+        <tr data-row-key="${diff.row_key}">
+          <td><input type="checkbox" class="pick-row" data-row-key="${diff.row_key}" ${diff.requires_user_input ? "" : "disabled"} /></td>
+          <td>${diff.status}<br><small>${escapeHtml(diff.change_category)}</small></td>
+          <td>${escapeHtml(task)}<br><small>${diff.left_uid || "-"} -> ${diff.right_uid || "-"}</small></td>
+          <td><span class="chip ${diff.confidence_band}">${diff.confidence}%</span></td>
+          <td>${causeCell}</td>
+          <td>${reasonCell}</td>
+          <td>${diff.attribution_status} ${pendingBadge} ${autoBadge}</td>
           <td>${diff.task_slippage_days}</td>
-          <td>${evidence}<br><small>${escapeHtml(diff.protocol_hint)}</small></td>
+          <td>${evidence}<br><small>${escapeHtml(diff.protocol_hint)}</small><br>${autoDetails.join("<br>")}<br>${promoteButton}</td>
         </tr>
       `;
-    })
-    .join("");
+      })
+      .join("");
+  }
 
   summaryCard.hidden = false;
   allocationCard.hidden = false;
@@ -593,6 +625,33 @@ function renderResult(json) {
   if (state.previewMeta) {
     renderPreview();
   }
+
+  document.querySelectorAll(".promote-auto").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const rowKey = button.getAttribute("data-row-key");
+      const current = (state.currentResult?.diffs || []).find((row) => row.row_key === rowKey);
+      if (!rowKey || !current) {
+        return;
+      }
+      clearError();
+      try {
+        await applyAttribution({
+          assignments: [
+            {
+              row_key: rowKey,
+              cause_tag: current.cause_tag || "unassigned",
+              reason_code: current.reason_code || "",
+              confirm_low_confidence:
+                current.confidence < 50 && current.attribution_status === "ready",
+              override_auto: true,
+            },
+          ],
+        });
+      } catch (error) {
+        showError(error.message);
+      }
+    });
+  });
 }
 
 async function postJson(url, payload) {
@@ -841,6 +900,15 @@ previewShowDeps.addEventListener("change", () => {
   state.previewShowDeps = previewShowDeps.checked;
   renderPreview();
 });
+
+if (diffShowAuto) {
+  diffShowAuto.addEventListener("change", () => {
+    state.showAutoResolvedRows = diffShowAuto.checked;
+    if (state.currentResult) {
+      renderResult(state.currentResult);
+    }
+  });
+}
 
 document.getElementById("preview-apply-link").addEventListener("click", async () => {
   const leftUid = Number(previewLeftSelect.value);

@@ -134,3 +134,29 @@ def test_preview_init_rejects_direct_pp():
     assert isinstance(response, JSONResponse)
     assert response.status_code == 400
     assert "Direct .pp parsing is not supported" in _as_error_text(response)
+
+
+def test_preview_flags_uid_repurpose_risk_for_manual_review():
+    left_csv = """Unique ID,Task Name,Start,Finish,Duration (mins),% Complete,Predecessors,Summary,Baseline Start,Baseline Finish
+1,Install piles,2025-01-01,2025-01-03,1440,0,,0,2025-01-01,2025-01-03
+"""
+    right_csv = """Unique ID,Task Name,Start,Finish,Duration (mins),% Complete,Predecessors,Summary,Baseline Start,Baseline Finish
+1,Airport handover closeout,2025-01-01,2025-01-03,1440,0,,0,2025-01-01,2025-01-03
+"""
+
+    response = asyncio.run(
+        preview_init(
+            left_file=_upload("left.csv", left_csv.encode("utf-8")),
+            right_file=_upload("right.csv", right_csv.encode("utf-8")),
+            include_baseline=False,
+            include_summaries=False,
+            offset=0,
+            limit=200,
+            left_column_map_json="",
+            right_column_map_json="",
+        )
+    )
+    assert isinstance(response, dict)
+    row = response["rows"][0]
+    assert row["match_needs_review"] is True
+    assert "uid_repurpose_risk" in row["match_flags"]

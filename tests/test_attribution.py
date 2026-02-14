@@ -5,16 +5,24 @@ from backend.comparison import compare_tasks
 from backend.schemas import AttributionAssignment, TaskRecord
 
 
-def task(uid: int, name: str, start: date, finish: date):
+def task(
+    uid: int,
+    name: str,
+    start: date,
+    finish: date,
+    *,
+    duration: int = 480,
+    predecessors: list[int] | None = None,
+):
     return TaskRecord(
         uid=uid,
         name=name,
         is_summary=False,
         start=start,
         finish=finish,
-        duration_minutes=480,
+        duration_minutes=duration,
         percent_complete=0,
-        predecessors=[],
+        predecessors=predecessors or [],
     )
 
 
@@ -115,3 +123,36 @@ def test_added_removed_zero_slippage():
     assert metric.client_days == 0
     assert metric.contractor_days == 0
     assert metric.neutral_days == 0
+
+
+def test_auto_flow_on_rows_are_not_counted_until_overridden():
+    left = [
+        task(1, "Root", date(2025, 1, 1), date(2025, 1, 2), duration=480),
+        task(2, "Downstream", date(2025, 1, 3), date(2025, 1, 4), duration=480, predecessors=[1]),
+    ]
+    right = [
+        task(1, "Root", date(2025, 1, 1), date(2025, 1, 4), duration=960),
+        task(22, "Downstream", date(2025, 1, 5), date(2025, 1, 6), duration=480, predecessors=[1]),
+    ]
+
+    result = compare_tasks(left, right, include_baseline=False)
+    flow_on = next(diff for diff in result.diffs if diff.left_name == "Downstream")
+    assert flow_on.change_category == "date_shift_flow_on"
+    assert flow_on.requires_user_input is False
+    assert flow_on.included_in_totals is False
+
+    updated, _ = apply_assignments(
+        result,
+        assignments=[
+            AttributionAssignment(
+                row_key=flow_on.row_key,
+                cause_tag="client",
+                reason_code="late_information",
+                confirm_low_confidence=True,
+                override_auto=True,
+            )
+        ],
+    )
+    promoted = next(diff for diff in updated.diffs if diff.row_key == flow_on.row_key)
+    assert promoted.change_category == "manual_override_actionable"
+    assert promoted.requires_user_input is True
