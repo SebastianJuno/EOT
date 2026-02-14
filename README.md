@@ -66,6 +66,24 @@ Output:
 - Runtime logs: `~/Library/Logs/EOTDiff/launcher.log`
 - Runtime config: `~/Library/Application Support/EOTDiff/config.json`
 
+## Performance regression checks
+
+Generate a benchmark report:
+
+```bash
+make -f scripts/Makefile perf-audit
+```
+
+Detect regressions against the repo baseline (`config/perf-baseline.json`):
+
+```bash
+make -f scripts/Makefile perf-check
+```
+
+Latest report output:
+
+- `build/perf-latest.json`
+
 ## Existing web/API features preserved
 
 - Compare API: `/api/compare-auto`

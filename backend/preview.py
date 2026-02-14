@@ -35,22 +35,32 @@ class PreviewSession:
     manual_overrides: dict[int, int] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
+    _left_leaf: list[TaskRecord] = field(init=False, repr=False)
+    _right_leaf: list[TaskRecord] = field(init=False, repr=False)
+    _left_summaries: list[TaskRecord] = field(init=False, repr=False)
+    _right_summaries: list[TaskRecord] = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._left_leaf = [task for task in self.left_tasks if not task.is_summary]
+        self._right_leaf = [task for task in self.right_tasks if not task.is_summary]
+        self._left_summaries = [task for task in self.left_tasks if task.is_summary]
+        self._right_summaries = [task for task in self.right_tasks if task.is_summary]
 
     @property
     def left_leaf(self) -> list[TaskRecord]:
-        return [task for task in self.left_tasks if not task.is_summary]
+        return self._left_leaf
 
     @property
     def right_leaf(self) -> list[TaskRecord]:
-        return [task for task in self.right_tasks if not task.is_summary]
+        return self._right_leaf
 
     @property
     def left_summaries(self) -> list[TaskRecord]:
-        return [task for task in self.left_tasks if task.is_summary]
+        return self._left_summaries
 
     @property
     def right_summaries(self) -> list[TaskRecord]:
-        return [task for task in self.right_tasks if task.is_summary]
+        return self._right_summaries
 
     def touch(self) -> None:
         self.updated_at = time.time()

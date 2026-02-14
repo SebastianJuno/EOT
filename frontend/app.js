@@ -31,6 +31,11 @@ const timelineLeft = document.getElementById("timeline-left");
 const timelineRight = document.getElementById("timeline-right");
 const timelineLeftWrap = document.getElementById("timeline-left-wrap");
 const timelineRightWrap = document.getElementById("timeline-right-wrap");
+const loadingOverlay = document.getElementById("loading-overlay");
+const loadingStage = document.getElementById("loading-stage");
+const loadingDetail = document.getElementById("loading-detail");
+const loadingFill = document.getElementById("loading-fill");
+const loadingPct = document.getElementById("loading-pct");
 
 const overrides = [];
 
@@ -55,6 +60,7 @@ const state = {
     rightOnly: new Map(),
   },
   lastRun: null,
+  loadingJobId: null,
 };
 
 function escapeHtml(value) {
@@ -72,6 +78,81 @@ function showError(message) {
 function clearError() {
   errorCard.hidden = true;
   errorText.textContent = "";
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function showLoadingOverlay(stageText, detailText) {
+  if (!loadingOverlay) return;
+  loadingOverlay.hidden = false;
+  loadingStage.textContent = stageText || "Starting";
+  loadingDetail.textContent = detailText || "";
+  loadingFill.style.width = "0%";
+  loadingPct.textContent = "0%";
+}
+
+function updateLoadingOverlay(job) {
+  if (!loadingOverlay) return;
+  const pct = Math.max(0, Math.min(100, Number(job.progress_pct || 0)));
+  loadingStage.textContent = job.stage || "Working";
+  loadingDetail.textContent = job.detail || "";
+  loadingFill.style.width = `${pct}%`;
+  loadingPct.textContent = `${Math.round(pct)}%`;
+}
+
+function hideLoadingOverlay() {
+  if (!loadingOverlay) return;
+  loadingOverlay.hidden = true;
+}
+
+async function startJobAndPoll(startUrl, requestInit, options = {}) {
+  const timeoutMs = options.timeoutMs ?? 180000;
+  const pollMs = options.pollMs ?? 250;
+  const initialStage = options.initialStage || "Starting";
+  const initialDetail = options.initialDetail || "";
+  const startedAt = Date.now();
+
+  showLoadingOverlay(initialStage, initialDetail);
+  try {
+    const startResponse = await fetch(startUrl, requestInit);
+    const startJson = await startResponse.json();
+    if (!startResponse.ok) {
+      throw new Error(startJson.error || "Failed to start operation");
+    }
+
+    const jobId = startJson.job_id;
+    if (!jobId) {
+      throw new Error("Progress job id missing");
+    }
+    state.loadingJobId = jobId;
+
+    while (true) {
+      if (Date.now() - startedAt > timeoutMs) {
+        throw new Error("Operation timed out. Please try again.");
+      }
+
+      const statusResponse = await fetch(`${apiBase}/api/progress/jobs/${encodeURIComponent(jobId)}`);
+      const statusJson = await statusResponse.json();
+      if (!statusResponse.ok) {
+        throw new Error(statusJson.error || "Progress status failed");
+      }
+
+      updateLoadingOverlay(statusJson);
+
+      if (statusJson.status === "completed") {
+        return statusJson.result;
+      }
+      if (statusJson.status === "failed") {
+        throw new Error(statusJson.error || "Operation failed");
+      }
+      await sleep(pollMs);
+    }
+  } finally {
+    state.loadingJobId = null;
+    hideLoadingOverlay();
+  }
 }
 
 function buildColumnMap(side) {
@@ -538,15 +619,17 @@ async function runPreviewInit(files, includeBaseline) {
   payload.append("left_column_map_json", JSON.stringify(buildColumnMap("left")));
   payload.append("right_column_map_json", JSON.stringify(buildColumnMap("right")));
 
-  const response = await fetch(`${apiBase}/api/preview/init`, {
-    method: "POST",
-    body: payload,
-  });
-
-  const json = await response.json();
-  if (!response.ok) {
-    throw new Error(json.error || "Preview initialization failed");
-  }
+  const json = await startJobAndPoll(
+    `${apiBase}/api/progress/preview/init`,
+    {
+      method: "POST",
+      body: payload,
+    },
+    {
+      initialStage: "Preparing preview",
+      initialDetail: "Uploading files and creating preview session",
+    }
+  );
 
   state.previewSessionId = json.session.session_id;
   state.previewRows = json.rows || [];
@@ -610,9 +693,18 @@ async function runPreviewAnalysis() {
   if (!state.previewSessionId) {
     return;
   }
-  const json = await postJson(`${apiBase}/api/preview/analyze`, {
-    session_id: state.previewSessionId,
-  });
+  const json = await startJobAndPoll(
+    `${apiBase}/api/progress/preview/analyze`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: state.previewSessionId }),
+    },
+    {
+      initialStage: "Running analysis",
+      initialDetail: "Analyzing selected preview matches",
+    }
+  );
   renderResult(json);
 }
 
@@ -625,14 +717,17 @@ async function runAutoCompare(files, includeBaseline) {
   payload.append("left_column_map_json", JSON.stringify(buildColumnMap("left")));
   payload.append("right_column_map_json", JSON.stringify(buildColumnMap("right")));
 
-  const response = await fetch(`${apiBase}/api/compare-auto`, {
-    method: "POST",
-    body: payload,
-  });
-  const json = await response.json();
-  if (!response.ok) {
-    throw new Error(json.error || "Comparison failed");
-  }
+  const json = await startJobAndPoll(
+    `${apiBase}/api/progress/compare-auto`,
+    {
+      method: "POST",
+      body: payload,
+    },
+    {
+      initialStage: "Running comparison",
+      initialDetail: "Matching tasks and preparing evidence",
+    }
+  );
   renderResult(json);
 }
 

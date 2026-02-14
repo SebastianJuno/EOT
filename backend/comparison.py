@@ -55,6 +55,7 @@ def compare_tasks(
     right_leaf = [t for t in right_tasks if not t.is_summary]
 
     matched, candidates = auto_match(left_leaf, right_leaf, overrides=overrides)
+    candidate_by_pair = {(candidate.left_uid, candidate.right_uid): candidate for candidate in candidates}
     right_by_uid = {t.uid: t for t in right_leaf}
 
     used_right = set(matched.values())
@@ -81,7 +82,14 @@ def compare_tasks(
             continue
 
         right = right_by_uid[right_uid]
-        candidate = next(c for c in candidates if c.left_uid == left.uid and c.right_uid == right_uid)
+        candidate = candidate_by_pair.get((left.uid, right_uid))
+        if candidate is None:
+            # Defensive fallback: keep compare resilient even if candidate generation changes.
+            candidate_confidence = 0.0
+            candidate_band = "red"
+        else:
+            candidate_confidence = candidate.confidence
+            candidate_band = confidence_band(candidate.confidence)
 
         evidence: list[ChangeField] = []
         for field in fields:
@@ -106,8 +114,8 @@ def compare_tasks(
                 left_finish=left.finish,
                 right_finish=right.finish,
                 status=status,
-                confidence=candidate.confidence,
-                confidence_band=confidence_band(candidate.confidence),
+                confidence=candidate_confidence,
+                confidence_band=candidate_band,
                 evidence=evidence,
             )
         )
