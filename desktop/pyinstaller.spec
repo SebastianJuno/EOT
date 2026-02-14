@@ -59,9 +59,8 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="EOT Diff Tool",
     debug=False,
     bootloader_ignore_signals=False,
@@ -72,8 +71,19 @@ exe = EXE(
     console=False,
 )
 
-app = BUNDLE(
+coll = COLLECT(
     exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="EOT Diff Tool",
+)
+
+app = BUNDLE(
+    coll,
     name="EOT Diff Tool.app",
     icon=None,
     bundle_identifier="local.eotdiff.tool",

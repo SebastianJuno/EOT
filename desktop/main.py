@@ -282,6 +282,7 @@ def _run_ui_mode() -> int:
         try:
             def run_with_splash(splash) -> int:
                 nonlocal handle
+                splash.update(0, 5, "Starting")
                 rc, final_handle = _run_startup_sequence(
                     show_progress=lambda step, total, message: splash.update(step, total, message),
                     close_progress=splash.close,

@@ -23,6 +23,7 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Background progress-job framework at `backend/progress_jobs.py` with in-memory lifecycle tracking (`queued`, `running`, `completed`, `failed`), TTL cleanup, and capped retention.
 - Additive progress APIs: `POST /api/progress/compare-auto`, `POST /api/progress/preview/init`, `POST /api/progress/preview/analyze`, and `GET /api/progress/jobs/{job_id}`.
 - Coverage for progress APIs and desktop splash startup flow in `tests/test_progress_jobs.py` and expanded `tests/test_desktop_main.py`.
+- Startup timing parser/report tooling via `desktop/startup_timing.py`, `scripts/startup_timing_report.py`, and `make -f scripts/Makefile startup-timing`.
 
 ### Changed
 - Reorganized repository root so only `README.md`, `CHANGELOG.md`, and `EOT Diff Tool.app` remain as top-level non-hidden entries.
@@ -34,6 +35,8 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Frontend compare/analysis actions now use job-based progress polling with a full-screen minimalist loading overlay that appears immediately and updates through backend stages.
 - Desktop startup now uses an immediate pywebview splash progress screen and transitions the same window into the main app URL after backend health succeeds, with fallback to dialog mode on splash failure.
 - Backend compare/preview orchestration refactored into reusable operation helpers that optionally emit progress updates while preserving existing synchronous endpoints.
+- Desktop startup now uses a single persistent splash lifecycle (no separate placeholder dialog), with launch/splash timing events logged to launcher logs.
+- macOS desktop packaging switched to PyInstaller onedir app layout for faster cold-start splash appearance.
 
 ### Fixed
 - None yet.

@@ -61,6 +61,7 @@ Output:
 
 - Desktop launcher code: `desktop/`
 - PyInstaller spec: `desktop/pyinstaller.spec`
+- Packaging mode: onedir app bundle (optimized for faster cold startup splash display)
 - macOS build script: `scripts/build_macos_app.sh`
 - Local app installer script: `scripts/install_local_repo_app.sh`
 - Runtime logs: `~/Library/Logs/EOTDiff/launcher.log`
@@ -83,6 +84,12 @@ make -f scripts/Makefile perf-check
 Latest report output:
 
 - `build/perf-latest.json`
+
+Startup splash timing check (latest launch, pass/fail against 500ms target):
+
+```bash
+make -f scripts/Makefile startup-timing
+```
 
 ## Existing web/API features preserved
 

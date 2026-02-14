@@ -62,6 +62,15 @@ On launch, app will:
 5. Open UI in a native window.
 6. Stop backend automatically when app closes.
 
+## Startup timing check
+
+After launching the desktop app at least once, you can read the latest splash timing from launcher logs:
+
+```bash
+cd ~/Documents/<project-folder>
+make -f scripts/Makefile startup-timing
+```
+
 ## Troubleshooting
 
 - App opens but compare fails on `.mpp`:

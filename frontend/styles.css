@@ -32,6 +32,10 @@ body {
   padding: 20px;
 }
 
+.loading-overlay[hidden] {
+  display: none !important;
+}
+
 .loading-card {
   width: min(460px, 92vw);
   background: rgba(255, 255, 255, 0.94);

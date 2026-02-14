@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import json
+import sys
+import time
 from collections.abc import Callable
-
-import webview
 
 SPLASH_HTML = """
 <!doctype html>
@@ -105,16 +105,87 @@ SPLASH_HTML = """
 """
 
 
+_WEBVIEW_MODULE = None
+_LAUNCH_SCREEN = None
+
+
+def _webview():
+    global _WEBVIEW_MODULE
+    if _WEBVIEW_MODULE is None:
+        import webview as imported_webview  # type: ignore[import-not-found]
+
+        _WEBVIEW_MODULE = imported_webview
+    return _WEBVIEW_MODULE
+
+
+class _ScreenRef:
+    def __init__(self, frame) -> None:
+        self.frame = frame
+
+
+def _point_in_frame(point, frame) -> bool:
+    left = float(frame.origin.x)
+    bottom = float(frame.origin.y)
+    right = left + float(frame.size.width)
+    top = bottom + float(frame.size.height)
+    return left <= float(point.x) < right and bottom <= float(point.y) < top
+
+
+def _detect_active_launch_screen():
+    if sys.platform != "darwin":
+        return None
+    try:
+        import AppKit  # type: ignore[import-not-found]
+
+        pointer = AppKit.NSEvent.mouseLocation()
+        for ns_screen in AppKit.NSScreen.screens():
+            frame = ns_screen.frame()
+            if _point_in_frame(pointer, frame):
+                return _ScreenRef(frame)
+
+        main_screen = AppKit.NSScreen.mainScreen()
+        if main_screen is not None:
+            return _ScreenRef(main_screen.frame())
+    except Exception:
+        return None
+    return None
+
+
+def _launch_screen():
+    global _LAUNCH_SCREEN
+    if _LAUNCH_SCREEN is None:
+        _LAUNCH_SCREEN = _detect_active_launch_screen()
+    return _LAUNCH_SCREEN
+
+
+def _log_startup_timing(event: str, started_at: float | None = None) -> None:
+    try:
+        from desktop.prereq import log_event
+
+        message = f"startup_timing event={event}"
+        if started_at is not None:
+            elapsed_ms = int((time.perf_counter() - started_at) * 1000.0)
+            message += f" elapsed_ms={elapsed_ms}"
+        log_event(message)
+    except Exception:
+        # Startup logging should never block UI startup.
+        pass
+
+
 class StartupSplashWindow:
-    def __init__(self) -> None:
-        self.window = webview.create_window(
+    def __init__(self, startup_t0: float | None = None) -> None:
+        self._startup_t0 = startup_t0
+        self.window = _webview().create_window(
             title="Launching EOT Diff Tool",
             html=SPLASH_HTML,
             width=620,
             height=420,
             min_size=(560, 360),
-            resizable=False,
+            resizable=True,
+            screen=_launch_screen(),
         )
+        if self._startup_t0 is not None:
+            self.window.events.shown += lambda: _log_startup_timing("splash_shown", self._startup_t0)
 
     def update(self, step: int, total: int, stage: str, detail: str = "") -> None:
         pct = 0.0
@@ -130,7 +201,46 @@ class StartupSplashWindow:
             pass
 
     def load_app(self, base_url: str) -> None:
+        if self._startup_t0 is not None:
+            _log_startup_timing("app_url_load", self._startup_t0)
         self.window.load_url(base_url)
+        self._expand_for_app()
+
+    def _expand_for_app(self) -> None:
+        if sys.platform == "darwin":
+            launch_screen = _launch_screen()
+            frame = getattr(launch_screen, "frame", None)
+            if frame is not None:
+                width = int(getattr(frame.size, "width", 1400))
+                height = int(getattr(frame.size, "height", 900))
+                try:
+                    move = getattr(self.window, "move", None)
+                    if callable(move):
+                        move(0, 0)
+                except Exception:
+                    pass
+                try:
+                    resize = getattr(self.window, "resize", None)
+                    if callable(resize):
+                        resize(width, height)
+                        return
+                except Exception:
+                    pass
+
+        try:
+            maximize = getattr(self.window, "maximize", None)
+            if callable(maximize):
+                maximize()
+                return
+        except Exception:
+            pass
+
+        try:
+            resize = getattr(self.window, "resize", None)
+            if callable(resize):
+                resize(1400, 900)
+        except Exception:
+            pass
 
     def close(self) -> None:
         try:
@@ -140,28 +250,33 @@ class StartupSplashWindow:
 
 
 def launch_with_startup_splash(run_startup: Callable[[StartupSplashWindow], int]) -> int:
-    splash = StartupSplashWindow()
+    startup_t0 = time.perf_counter()
+    _log_startup_timing("launch_entry", startup_t0)
+    splash = StartupSplashWindow(startup_t0=startup_t0)
+    _log_startup_timing("splash_window_created", startup_t0)
     result: dict[str, int] = {"code": 1}
 
     def worker() -> None:
         code = 1
         try:
+            splash.update(0, 5, "Starting", "Preparing application startup")
             code = run_startup(splash)
         finally:
             result["code"] = code
             if code != 0:
                 splash.close()
 
-    webview.start(worker)
+    _webview().start(worker)
     return result["code"]
 
 
 def launch_window(base_url: str) -> None:
-    window = webview.create_window(
+    window = _webview().create_window(
         title="EOT Diff Tool",
         url=base_url,
         width=1400,
         height=900,
         min_size=(1000, 700),
+        screen=_launch_screen(),
     )
-    webview.start()
+    _webview().start()
