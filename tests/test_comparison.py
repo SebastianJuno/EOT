@@ -16,6 +16,7 @@ def task(
 ):
     return TaskRecord(
         uid=uid,
+        uid_inferred=False,
         name=name,
         is_summary=summary,
         start=start,
@@ -74,6 +75,40 @@ def test_uid_name_duration_signature_date_shift_is_identity_certain():
     assert diff.change_category == "identity_certain"
     assert diff.requires_user_input is False
     assert result.summary.action_required_tasks == 0
+
+
+def test_uid_name_duration_signature_not_certain_when_uid_is_inferred():
+    left = [
+        TaskRecord(
+            uid=10,
+            uid_inferred=True,
+            name="Pour concrete",
+            is_summary=False,
+            start=date(2025, 1, 1),
+            finish=date(2025, 1, 3),
+            duration_minutes=960,
+            percent_complete=50,
+            predecessors=[],
+        )
+    ]
+    right = [
+        TaskRecord(
+            uid=10,
+            uid_inferred=True,
+            name="Pour concrete",
+            is_summary=False,
+            start=date(2025, 1, 2),
+            finish=date(2025, 1, 4),
+            duration_minutes=960,
+            percent_complete=50,
+            predecessors=[],
+        )
+    ]
+
+    result = compare_tasks(left, right, include_baseline=False)
+    diff = result.diffs[0]
+    assert diff.change_category != "identity_certain"
+    assert diff.requires_user_input is True
 
 
 def test_same_uid_with_material_rename_is_identity_conflict():

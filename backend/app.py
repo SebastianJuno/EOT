@@ -28,6 +28,7 @@ from .progress_jobs import ProgressJobStore
 from .reporting import build_csv, build_pdf
 from .schemas import (
     AttributionApplyRequest,
+    CsvImportDiagnostics,
     CompareResult,
     MatchOverride,
     PreviewAnalyzeRequest,
@@ -122,6 +123,25 @@ async def _read_upload_pair_bytes(left_file: UploadFile, right_file: UploadFile)
     return left_bytes, right_bytes
 
 
+def _diagnostics_to_warnings(side_label: str, diagnostics: CsvImportDiagnostics) -> list[str]:
+    warnings: list[str] = []
+    for item in diagnostics.warnings:
+        warnings.append(f"{side_label}: {item}")
+    if diagnostics.inferred_fields:
+        warnings.append(
+            f"{side_label}: Auto-mapped columns for {', '.join(sorted(diagnostics.inferred_fields))}."
+        )
+    if diagnostics.skipped_duplicate_header_rows > 0:
+        warnings.append(
+            f"{side_label}: Skipped {diagnostics.skipped_duplicate_header_rows} duplicated header row(s)."
+        )
+    if diagnostics.skipped_invalid_rows > 0:
+        warnings.append(
+            f"{side_label}: Skipped {diagnostics.skipped_invalid_rows} row(s) with missing required task values."
+        )
+    return warnings
+
+
 def _parse_pair_from_bytes(
     *,
     left_filename: str | None,
@@ -132,7 +152,7 @@ def _parse_pair_from_bytes(
     left_column_map_json: str,
     right_column_map_json: str,
     progress: ProgressCallback | None = None,
-) -> tuple[list, list]:
+) -> tuple[list, list, list[str]]:
     _emit(progress, 20, "Parsing inputs", "Normalizing file payloads")
 
     if left_kind == ".mpp":
@@ -149,23 +169,34 @@ def _parse_pair_from_bytes(
             left_tasks = parse_mpp(left_path, PARSER_JAR)
             _emit(progress, 55, "Parsing inputs", "Parsing Programme B .mpp")
             right_tasks = parse_mpp(right_path, PARSER_JAR)
-            return left_tasks, right_tasks
+            return left_tasks, right_tasks, []
 
     if left_kind == ".xml":
         _emit(progress, 40, "Parsing inputs", "Parsing Programme A XML")
         left_tasks = parse_tasks_from_project_xml_bytes(left_bytes)
         _emit(progress, 60, "Parsing inputs", "Parsing Programme B XML")
         right_tasks = parse_tasks_from_project_xml_bytes(right_bytes)
-        return left_tasks, right_tasks
+        return left_tasks, right_tasks, []
 
     if left_kind == ".csv":
         left_map = _parse_csv_map(left_column_map_json, "left")
         right_map = _parse_csv_map(right_column_map_json, "right")
         _emit(progress, 40, "Parsing inputs", "Parsing Programme A CSV")
-        left_tasks = parse_tasks_from_csv_bytes(left_bytes, left_map)
+        left_tasks, left_diag = parse_tasks_from_csv_bytes(
+            left_bytes,
+            left_map,
+            allow_inference=True,
+            return_diagnostics=True,
+        )
         _emit(progress, 60, "Parsing inputs", "Parsing Programme B CSV")
-        right_tasks = parse_tasks_from_csv_bytes(right_bytes, right_map)
-        return left_tasks, right_tasks
+        right_tasks, right_diag = parse_tasks_from_csv_bytes(
+            right_bytes,
+            right_map,
+            allow_inference=True,
+            return_diagnostics=True,
+        )
+        warnings = _diagnostics_to_warnings("Programme A", left_diag) + _diagnostics_to_warnings("Programme B", right_diag)
+        return left_tasks, right_tasks, warnings
 
     raise ValueError(f"Unsupported file type: {left_kind}")
 
@@ -177,7 +208,7 @@ async def _parse_uploaded_pair(
     left_kind: str,
     left_column_map_json: str,
     right_column_map_json: str,
-) -> tuple[list, list]:
+) -> tuple[list, list, list[str]]:
     left_bytes, right_bytes = await _read_upload_pair_bytes(left_file, right_file)
     return _parse_pair_from_bytes(
         left_filename=left_file.filename,
@@ -210,7 +241,7 @@ def _compare_auto_operation(
 
     overrides = _parse_overrides(overrides_json)
 
-    left_tasks, right_tasks = _parse_pair_from_bytes(
+    left_tasks, right_tasks, import_warnings = _parse_pair_from_bytes(
         left_filename=left_filename,
         right_filename=right_filename,
         left_bytes=left_bytes,
@@ -229,6 +260,7 @@ def _compare_auto_operation(
         overrides=overrides,
         assignment_map=_get_assignment_map(),
     )
+    result.import_warnings = import_warnings
 
     _emit(progress, 95, "Finalizing", "Preparing compare result")
     return _set_last_result(result).model_dump()
@@ -254,7 +286,7 @@ def _preview_init_operation(
     if left_kind != right_kind:
         raise ValueError(f"Both files must be the same type. Received {left_kind} and {right_kind}.")
 
-    left_tasks, right_tasks = _parse_pair_from_bytes(
+    left_tasks, right_tasks, import_warnings = _parse_pair_from_bytes(
         left_filename=left_filename,
         right_filename=right_filename,
         left_bytes=left_bytes,
@@ -271,6 +303,7 @@ def _preview_init_operation(
         include_baseline=include_baseline,
         left_tasks=left_tasks,
         right_tasks=right_tasks,
+        import_warnings=import_warnings,
     )
     response = build_preview_init_response(
         session,
@@ -290,6 +323,7 @@ def _preview_analyze_operation(
     session = get_preview_session(payload.session_id)
     _emit(progress, 65, "Analyzing preview", "Running full compare with selected matches")
     result = analyze_preview_session(session, assignment_map=_get_assignment_map())
+    result.import_warnings = list(session.import_warnings)
     _emit(progress, 95, "Finalizing", "Preparing analysis result")
     return _set_last_result(result).model_dump()
 

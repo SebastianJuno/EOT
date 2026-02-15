@@ -21,6 +21,7 @@ const previewShowSummaries = document.getElementById("preview-show-summaries");
 const previewShowBaseline = document.getElementById("preview-show-baseline");
 const previewShowDeps = document.getElementById("preview-show-deps");
 const previewMeta = document.getElementById("preview-meta");
+const previewImportWarnings = document.getElementById("preview-import-warnings");
 const previewPageText = document.getElementById("preview-page-text");
 const previewLinkHint = document.getElementById("preview-link-hint");
 const previewMatchBody = document.getElementById("preview-match-body");
@@ -37,6 +38,7 @@ const loadingStage = document.getElementById("loading-stage");
 const loadingDetail = document.getElementById("loading-detail");
 const loadingFill = document.getElementById("loading-fill");
 const loadingPct = document.getElementById("loading-pct");
+const summaryImportWarnings = document.getElementById("summary-import-warnings");
 
 const overrides = [];
 
@@ -221,6 +223,23 @@ function renderOverrides() {
   overrideList.innerHTML = overrides
     .map((o, i) => `<li>#${i + 1}: ${o.left_uid} -> ${o.right_uid}</li>`)
     .join("");
+}
+
+function renderWarnings(container, warnings, emptyText = "") {
+  if (!container) return;
+  const items = (warnings || []).filter((item) => typeof item === "string" && item.trim().length > 0);
+  if (!items.length) {
+    if (emptyText) {
+      container.hidden = false;
+      container.innerHTML = `<ul><li>${escapeHtml(emptyText)}</li></ul>`;
+    } else {
+      container.hidden = true;
+      container.innerHTML = "";
+    }
+    return;
+  }
+  container.hidden = false;
+  container.innerHTML = `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
 function parseDate(value) {
@@ -472,6 +491,7 @@ function renderPreview() {
 
   const meta = state.previewMeta;
   previewCard.hidden = false;
+  renderWarnings(previewImportWarnings, meta.import_warnings || []);
 
   const start = meta.timeline_start || "-";
   const finish = meta.timeline_finish || "-";
@@ -539,6 +559,7 @@ function buildAnalysisStatus(result) {
 
 function renderResult(json) {
   state.currentResult = json;
+  renderWarnings(summaryImportWarnings, json.import_warnings || []);
 
   summary.innerHTML = `
     <p><strong>Action required:</strong> ${json.summary.action_required_tasks} | <strong>Auto-resolved:</strong> ${json.summary.auto_resolved_tasks}</p>

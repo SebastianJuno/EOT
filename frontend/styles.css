@@ -114,6 +114,21 @@ h3 {
   color: var(--muted);
 }
 
+.warning-list {
+  border: 1px solid #e2b267;
+  background: #fff4df;
+  color: #5d4520;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.warning-list ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
 .disclaimer {
   margin-top: 10px;
   font-size: 12px;

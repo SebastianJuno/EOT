@@ -20,6 +20,7 @@ ReasonCode = Literal[
 
 class TaskRecord(BaseModel):
     uid: int
+    uid_inferred: bool = False
     name: str
     wbs: str | None = None
     outline_level: int | None = None
@@ -138,6 +139,7 @@ class CompareResult(BaseModel):
     candidates: list[MatchCandidate]
     diffs: list[TaskDiff]
     fault_allocation: FaultAllocation = Field(default_factory=FaultAllocation)
+    import_warnings: list[str] = Field(default_factory=list)
 
 
 class AttributionAssignment(BaseModel):
@@ -204,6 +206,16 @@ class PreviewSessionMeta(BaseModel):
     timeline_start: date | None = None
     timeline_finish: date | None = None
     overrides: list[MatchOverride] = Field(default_factory=list)
+    import_warnings: list[str] = Field(default_factory=list)
+
+
+class CsvImportDiagnostics(BaseModel):
+    resolved_column_map: dict[str, str] = Field(default_factory=dict)
+    inferred_fields: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    synthetic_uid: bool = False
+    skipped_duplicate_header_rows: int = 0
+    skipped_invalid_rows: int = 0
 
 
 class PreviewRowsResponse(BaseModel):

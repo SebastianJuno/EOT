@@ -10,12 +10,17 @@ The format is based on Keep a Changelog and this project uses Semantic Versionin
 - Compare result schema fields for actionable gating and automation audit (`change_category`, `requires_user_input`, `auto_reason`, flow-on source UIDs, and auto-override flags).
 - Preview row metadata for match-risk surfacing (`match_needs_review`, `match_flags`) with UID repurpose risk detection.
 - UI control to show/hide auto-resolved rows and per-row "Promote to Actionable" override action.
+- CSV import diagnostics payload (`resolved_column_map`, inferred fields, warnings, synthetic UID flag, skipped-row counters) surfaced through compare/preview responses.
+- Smoke-check script for real-world CSV parsing and compare validation at `scripts/csv_smoke_real.py` (`make -f scripts/Makefile csv-smoke`).
 
 ### Changed
 - Matching now treats `UID + normalized name + duration` as a certain identity signature while treating UID-only alignment as non-authoritative.
 - Comparison classification now distinguishes identity-certain, identity-conflict, duration/predecessor changes, flow-on date drift, and unexplained date drift.
 - Attribution pipeline now respects actionable gating and supports promoting auto-resolved rows into actionable assessment.
 - Summary and report outputs now surface actionable counts, automation counts, and flow-on classifications.
+- CSV parser now supports adaptive column inference, duplicate-header-row skipping, synthetic UID fallback, and MSP-style textual duration parsing (`w/d/h/m`).
+- Identity certainty now requires authoritative UIDs (inferred synthetic UIDs are excluded from certainty matching).
+- Frontend preview/summary surfaces non-blocking import warnings for inferred mappings and skipped rows.
 
 ### Fixed
 - None yet.

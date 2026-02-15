@@ -20,6 +20,7 @@
 
           <details>
             <summary>CSV Mapping (only used when both files are .csv)</summary>
+            <p class="sub">Auto-detection is applied when mappings are missing or mismatched. You can override any inferred column here.</p>
             <h3>Column Mapping (Programme A)</h3>
             <div class="map-grid">
               <input id="left-col-uid" placeholder="UID column (e.g. Unique ID)" value="Unique ID" />
@@ -63,6 +64,7 @@
           <button id="preview-refresh" type="button">Refresh Preview</button>
           <button id="preview-run-analysis" type="button">Run Full Analysis</button>
         </div>
+        <div id="preview-import-warnings" class="warning-list" hidden></div>
         <p id="preview-meta" class="sub"></p>
         <div class="preview-paging">
           <button id="preview-prev" type="button">Previous</button>
@@ -115,6 +117,7 @@
 
       <section class="card" id="summary-card" hidden>
         <h2>3) Summary</h2>
+        <div id="summary-import-warnings" class="warning-list" hidden></div>
         <div id="summary"></div>
         <div class="actions">
           <a class="btn" href="/api/export/csv" target="_blank">Download CSV</a>

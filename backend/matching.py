@@ -50,6 +50,9 @@ def _confidence(left: TaskRecord, right: TaskRecord) -> tuple[float, str]:
 
 def has_identity_signature(left: TaskRecord, right: TaskRecord) -> bool:
     return (
+        not left.uid_inferred
+        and not right.uid_inferred
+        and
         left.uid == right.uid
         and normalize_task_name(left.name) == normalize_task_name(right.name)
         and left.duration_minutes == right.duration_minutes

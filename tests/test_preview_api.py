@@ -21,6 +21,18 @@ RIGHT_CSV = """Unique ID,Task Name,Start,Finish,Duration (mins),% Complete,Prede
 20,Pour Concrete,2025-01-05,2025-01-07,1440,30,10FS,0,2025-01-05,2025-01-07
 """
 
+REAL_STYLE_LEFT = """Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Programme A,10w,01/01/2025,12/03/2025,50,49
+Task A,2w 3d,01/01/2025,17/01/2025,100,80
+"""
+
+REAL_STYLE_RIGHT = """Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Programme A,11w,01/01/2025,19/03/2025,52,50
+Task A,2w 3d,01/01/2025,17/01/2025,100,85
+"""
+
 
 def _upload(filename: str, content: bytes) -> UploadFile:
     return UploadFile(file=io.BytesIO(content), filename=filename)
@@ -160,3 +172,24 @@ def test_preview_flags_uid_repurpose_risk_for_manual_review():
     row = response["rows"][0]
     assert row["match_needs_review"] is True
     assert "uid_repurpose_risk" in row["match_flags"]
+
+
+def test_preview_init_real_style_csv_includes_import_warnings():
+    response = asyncio.run(
+        preview_init(
+            left_file=_upload("left.csv", REAL_STYLE_LEFT.encode("utf-8")),
+            right_file=_upload("right.csv", REAL_STYLE_RIGHT.encode("utf-8")),
+            include_baseline=False,
+            include_summaries=False,
+            offset=0,
+            limit=200,
+            left_column_map_json="",
+            right_column_map_json="",
+        )
+    )
+
+    assert isinstance(response, dict)
+    warnings = response["session"].get("import_warnings", [])
+    assert warnings
+    assert any("synthetic sequential UIDs" in warning for warning in warnings)
+    assert any("duplicated header row" in warning for warning in warnings)

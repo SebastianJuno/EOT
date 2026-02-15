@@ -18,6 +18,18 @@ RIGHT_CSV = """Unique ID,Task Name,Start,Finish,Duration (mins),% Complete,Prede
 20,Pour Concrete,2025-01-05,2025-01-07,1440,30,10FS,0,2025-01-05,2025-01-07
 """
 
+REAL_STYLE_LEFT = """Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Contract Programme,88w 1d,01/11/2024,21/08/2026,7.14,6.82
+Enabling Works,41w 3d,31/03/2025,04/02/2026,87.39,85.29
+"""
+
+REAL_STYLE_RIGHT = """Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Name,Duration,Start,Finish,Planned percent complete (PPC),Percent complete
+Contract Programme,89w 0d,01/11/2024,22/08/2026,7.14,6.90
+Enabling Works,41w 3d,31/03/2025,04/02/2026,87.39,86.00
+"""
+
 
 def _upload(filename: str, content: bytes) -> UploadFile:
     return UploadFile(file=io.BytesIO(content), filename=filename)
@@ -73,3 +85,23 @@ def test_auto_compare_accepts_csv_pair():
     assert response["summary"]["total_left_leaf_tasks"] == 2
     assert response["summary"]["total_right_leaf_tasks"] == 2
     assert "fault_allocation" in response
+
+
+def test_auto_compare_accepts_real_style_csv_and_emits_import_warnings():
+    response = asyncio.run(
+        compare_auto(
+            left_file=_upload("left.csv", REAL_STYLE_LEFT.encode("utf-8")),
+            right_file=_upload("right.csv", REAL_STYLE_RIGHT.encode("utf-8")),
+            include_baseline=False,
+            overrides_json="[]",
+            left_column_map_json="",
+            right_column_map_json="",
+        )
+    )
+
+    assert isinstance(response, dict)
+    assert response["summary"]["total_left_leaf_tasks"] == 2
+    assert response["summary"]["total_right_leaf_tasks"] == 2
+    assert "import_warnings" in response
+    assert any("synthetic sequential UIDs" in warning for warning in response["import_warnings"])
+    assert any("duplicated header row" in warning for warning in response["import_warnings"])

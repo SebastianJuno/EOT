@@ -3,7 +3,7 @@ PYTHON ?= python3.12
 VENV ?= $(ROOT_DIR)/.venv
 VENV_PY ?= $(VENV)/bin/python
 
-.PHONY: setup test run run-open run-desktop-dev package-macos install-local-app open-local-app build-parser check-python check-venv clean-venv bootstrap-macos generate-sample-data perf-audit perf-check startup-timing
+.PHONY: setup test run run-open run-desktop-dev package-macos install-local-app open-local-app build-parser check-python check-venv clean-venv bootstrap-macos generate-sample-data perf-audit perf-check startup-timing csv-smoke
 
 check-python:
 	@command -v $(PYTHON) >/dev/null || (echo "ERROR: $(PYTHON) not found. Install Python 3.12 first."; exit 1)
@@ -62,3 +62,6 @@ perf-check: check-venv
 
 startup-timing: check-venv
 	cd "$(ROOT_DIR)" && . "$(VENV)/bin/activate" && python scripts/startup_timing_report.py --max-ms 500
+
+csv-smoke: check-venv
+	cd "$(ROOT_DIR)" && . "$(VENV)/bin/activate" && python scripts/csv_smoke_real.py

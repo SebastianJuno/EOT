@@ -13,6 +13,9 @@ Offline, single-user app for comparing programme versions for delay/claims prepa
 - Actionable-first comparison UX: only rows requiring explanation are shown by default.
 - Automatic no-action classification for certain identity matches (`UID + normalized name + duration`) with optional manual override.
 - Propagation-aware date drift handling that auto-tags downstream flow-on shifts while keeping ambiguous cases actionable.
+- Flexible CSV column inference (header + value-shape scoring) so non-standard export schemas can be parsed without strict column-name matches.
+- Synthetic UID fallback for CSVs without reliable UID columns, with clear import warnings and certainty-safe matching behavior.
+- MSP-style textual duration parsing for CSV values such as `88w 1d`, `33w 4h`, and `13w 2.5d`.
 - If auto prerequisite install fails, app shows manual fix instructions and a one-click Java 17 download link.
 
 ## Quick start (developer machine)

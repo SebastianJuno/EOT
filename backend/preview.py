@@ -32,6 +32,7 @@ class PreviewSession:
     include_baseline: bool
     left_tasks: list[TaskRecord]
     right_tasks: list[TaskRecord]
+    import_warnings: list[str] = field(default_factory=list)
     manual_overrides: dict[int, int] = field(default_factory=dict)
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
@@ -90,6 +91,7 @@ def create_preview_session(
     include_baseline: bool,
     left_tasks: list[TaskRecord],
     right_tasks: list[TaskRecord],
+    import_warnings: list[str] | None = None,
 ) -> PreviewSession:
     cleanup_preview_sessions()
     session_id = uuid.uuid4().hex[:16]
@@ -99,6 +101,7 @@ def create_preview_session(
         include_baseline=include_baseline,
         left_tasks=left_tasks,
         right_tasks=right_tasks,
+        import_warnings=list(import_warnings or []),
     )
     PREVIEW_SESSIONS[session_id] = session
     return session
@@ -323,6 +326,7 @@ def _build_meta(
         timeline_start=start,
         timeline_finish=finish,
         overrides=_manual_override_models(session),
+        import_warnings=list(session.import_warnings),
     )
 
 
