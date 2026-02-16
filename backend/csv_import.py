@@ -379,44 +379,11 @@ def _resolve_column_map(
     return resolved, inferred_fields, warnings, scored_best
 
 
-def _format_inference_hint(scored_best: list[tuple[str, float]]) -> str:
-    items = [f"{field}={score:.2f}" for field, score in scored_best if score > 0]
-    if not items:
-        return "none"
-    return ", ".join(items[:6])
-
-
-def parse_tasks_from_csv_bytes(
-    data: bytes,
-    column_map: dict[str, str] | None = None,
-    *,
-    allow_inference: bool = True,
-    return_diagnostics: bool = False,
-) -> list[TaskRecord] | tuple[list[TaskRecord], CsvImportDiagnostics]:
-    text = data.decode("utf-8-sig", errors="replace")
-    reader = csv.reader(StringIO(text))
-    rows = list(reader)
-    if not rows:
-        raise ValueError("CSV appears empty")
-    headers = [header.strip() for header in rows[0]]
-    if not any(headers):
-        raise ValueError("CSV header row is empty")
-
-    resolved_map, inferred_fields, warnings, scored_best = _resolve_column_map(
-        headers,
-        rows[1:],
-        column_map,
-        allow_inference=allow_inference,
-    )
-
-    missing_required = [field for field in REQUIRED_FIELDS if not resolved_map.get(field)]
-    if missing_required:
-        hints = _format_inference_hint(scored_best)
-        raise ValueError(
-            "Unable to resolve required CSV columns: "
-            f"{', '.join(missing_required)}. Available headers: {headers}. Inference hints: {hints}"
-        )
-
+def _build_tasks_from_rows(
+    headers: list[str],
+    data_rows: list[list[str]],
+    resolved_map: dict[str, str],
+) -> tuple[list[TaskRecord], int, int, bool, int]:
     tasks: list[TaskRecord] = []
     skipped_duplicate_header_rows = 0
     skipped_invalid_rows = 0
@@ -425,7 +392,7 @@ def parse_tasks_from_csv_bytes(
     seen_uids: set[int] = set()
     next_uid = 1
 
-    for row_cells in rows[1:]:
+    for row_cells in data_rows:
         row = list(row_cells[: len(headers)]) + [""] * max(0, len(headers) - len(row_cells))
         if _is_empty_row(row):
             continue
@@ -486,6 +453,98 @@ def parse_tasks_from_csv_bytes(
             else None,
         )
         tasks.append(task)
+
+    return tasks, skipped_duplicate_header_rows, skipped_invalid_rows, synthetic_uid, synthetic_uid_rows
+
+
+def _format_inference_hint(scored_best: list[tuple[str, float]]) -> str:
+    items = [f"{field}={score:.2f}" for field, score in scored_best if score > 0]
+    if not items:
+        return "none"
+    return ", ".join(items[:6])
+
+
+def parse_tasks_from_csv_bytes(
+    data: bytes,
+    column_map: dict[str, str] | None = None,
+    *,
+    allow_inference: bool = True,
+    return_diagnostics: bool = False,
+) -> list[TaskRecord] | tuple[list[TaskRecord], CsvImportDiagnostics]:
+    text = data.decode("utf-8-sig", errors="replace")
+    reader = csv.reader(StringIO(text))
+    rows = list(reader)
+    if not rows:
+        raise ValueError("CSV appears empty")
+    headers = [header.strip() for header in rows[0]]
+    if not any(headers):
+        raise ValueError("CSV header row is empty")
+
+    resolved_map, inferred_fields, warnings, scored_best = _resolve_column_map(
+        headers,
+        rows[1:],
+        column_map,
+        allow_inference=allow_inference,
+    )
+
+    missing_required = [field for field in REQUIRED_FIELDS if not resolved_map.get(field)]
+    if missing_required:
+        hints = _format_inference_hint(scored_best)
+        raise ValueError(
+            "Unable to resolve required CSV columns: "
+            f"{', '.join(missing_required)}. Available headers: {headers}. Inference hints: {hints}"
+        )
+
+    tasks, skipped_duplicate_header_rows, skipped_invalid_rows, synthetic_uid, synthetic_uid_rows = _build_tasks_from_rows(
+        headers,
+        rows[1:],
+        resolved_map,
+    )
+
+    provided_map = column_map or {}
+    has_explicit_required_mappings = any((provided_map.get(field) or "").strip() for field in REQUIRED_FIELDS)
+    if not tasks and allow_inference and has_explicit_required_mappings:
+        fallback_map = dict(provided_map)
+        dropped_required_fields: list[str] = []
+        for field in REQUIRED_FIELDS:
+            if (fallback_map.get(field) or "").strip():
+                dropped_required_fields.append(field)
+                fallback_map.pop(field, None)
+
+        if dropped_required_fields:
+            fallback_resolved, fallback_inferred, fallback_warnings, fallback_scored = _resolve_column_map(
+                headers,
+                rows[1:],
+                fallback_map,
+                allow_inference=allow_inference,
+            )
+            fallback_missing_required = [field for field in REQUIRED_FIELDS if not fallback_resolved.get(field)]
+            if not fallback_missing_required:
+                (
+                    fallback_tasks,
+                    fallback_skipped_duplicate_header_rows,
+                    fallback_skipped_invalid_rows,
+                    fallback_synthetic_uid,
+                    fallback_synthetic_uid_rows,
+                ) = _build_tasks_from_rows(
+                    headers,
+                    rows[1:],
+                    fallback_resolved,
+                )
+                if fallback_tasks:
+                    tasks = fallback_tasks
+                    resolved_map = fallback_resolved
+                    inferred_fields = _unique_non_empty(inferred_fields + fallback_inferred)
+                    scored_best = fallback_scored
+                    warnings = _unique_non_empty(warnings + fallback_warnings)
+                    warnings.append(
+                        "Configured required-column mappings produced no valid rows; "
+                        "auto-detected required fields and recovered task rows."
+                    )
+                    skipped_duplicate_header_rows = fallback_skipped_duplicate_header_rows
+                    skipped_invalid_rows = fallback_skipped_invalid_rows
+                    synthetic_uid = fallback_synthetic_uid
+                    synthetic_uid_rows = fallback_synthetic_uid_rows
 
     if not tasks:
         hints = _format_inference_hint(scored_best)

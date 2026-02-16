@@ -96,3 +96,29 @@ Task A,Task A,2026-01-01,2026-01-02,25
 
     assert len(tasks) == 1
     assert any("Ambiguous mapping for 'name'" in warning for warning in diagnostics.warnings)
+
+
+def test_parse_tasks_from_csv_bytes_recovers_from_bad_required_mappings():
+    csv_text = """Name,Start,Finish,Percent complete
+Task A,01/01/2025,05/01/2025,50
+Task B,06/01/2025,10/01/2025,75
+"""
+
+    # `name` and `finish` intentionally point at existing but invalid columns.
+    column_map = {
+        "name": "Start",
+        "start": "Start",
+        "finish": "Name",
+        "percent_complete": "Percent complete",
+    }
+
+    tasks, diagnostics = parse_tasks_from_csv_bytes(
+        csv_text.encode("utf-8"),
+        column_map=column_map,
+        return_diagnostics=True,
+    )
+
+    assert len(tasks) == 2
+    assert diagnostics.resolved_column_map["name"] == "Name"
+    assert diagnostics.resolved_column_map["finish"] == "Finish"
+    assert any("recovered task rows" in warning for warning in diagnostics.warnings)
